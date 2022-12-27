@@ -1,3 +1,12 @@
+# 拉取 react 源码
+
+```command
+// 这次我们将存放目录放在项目文件里的 src 目录下
+cd src
+// 我们下载的是带有 v18.2.0 tag 的版本
+git clone --branch v18.2.0 git@github.com:facebook/react.git
+```
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
