@@ -179,6 +179,7 @@ export function createRoot(
   let onRecoverableError = defaultOnRecoverableError;
   let transitionCallbacks = null;
 
+debugger
   if (options !== null && options !== undefined) {
     if (__DEV__) {
       if ((options: any).hydrate) {
