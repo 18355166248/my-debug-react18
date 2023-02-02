@@ -126,10 +126,10 @@ function FiberNode(
   this.key = key;
   this.elementType = null;
   this.type = null;
-  this.stateNode = null;
+  this.stateNode = null;  //  fiber节点对应的真实Dom节点
 
   // Fiber
-  this.return = null;
+  this.return = null; // 指向父节点
   this.child = null;
   this.sibling = null;
   this.index = 0;

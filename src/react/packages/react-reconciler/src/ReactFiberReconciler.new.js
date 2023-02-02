@@ -245,7 +245,7 @@ function findHostInstanceWithWarning(
 }
 
 export function createContainer(
-  containerInfo: Container,
+  containerInfo: Container, // 入口dom
   tag: RootTag,
   hydrationCallbacks: null | SuspenseHydrationCallbacks,
   isStrictMode: boolean,
@@ -256,6 +256,7 @@ export function createContainer(
 ): OpaqueRoot {
   const hydrate = false;
   const initialChildren = null;
+  // 创建Fiber
   return createFiberRoot(
     containerInfo,
     tag,

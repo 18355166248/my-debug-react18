@@ -222,9 +222,10 @@ debugger
     }
   }
 
+  // 返回根节点
   const root = createContainer(
-    container,
-    ConcurrentRoot,
+    container, // 入口dom
+    ConcurrentRoot, // 1
     null,
     isStrictMode,
     concurrentUpdatesByDefaultOverride,
@@ -232,8 +233,11 @@ debugger
     onRecoverableError,
     transitionCallbacks,
   );
+
+  // root.current 指向 Fiber节点  在container上绑定一个自定义值__reactContainer$+随机数
   markContainerAsRoot(root.current, container);
 
+  // 兼容处理 假如拿到的是注释节点 尝试获取父节点作为入口节点
   const rootContainerElement: Document | Element | DocumentFragment =
     container.nodeType === COMMENT_NODE
       ? (container.parentNode: any)

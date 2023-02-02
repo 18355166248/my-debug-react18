@@ -383,7 +383,8 @@ const listeningMarker =
     .toString(36)
     .slice(2);
 
-export function listenToAllSupportedEvents(rootContainerElement: EventTarget) {
+export function listenToAllSupportedEvents (rootContainerElement: EventTarget) {
+  debugger
   if (!(rootContainerElement: any)[listeningMarker]) {
     (rootContainerElement: any)[listeningMarker] = true;
     allNativeEvents.forEach(domEventName => {
