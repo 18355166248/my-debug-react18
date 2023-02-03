@@ -86,18 +86,20 @@ export function createEventListenerWrapper(
 export function createEventListenerWrapperWithPriority(
   targetContainer: EventTarget,
   domEventName: DOMEventName,
-  eventSystemFlags: EventSystemFlags,
+  eventSystemFlags: EventSystemFlags, // 区别捕获和冒泡 冒泡0 捕获4
 ): Function {
+  // 针对不同的事件返回不同的数字(事件优先级) 数字对应的就行下面 switch 里面值
+  // 根据不同的优先级获取不同的 dispatchEvent 函数, 最后都会通过 bind 绑定当前事件的名称, 也就是说当我们触发事件的时候, 最终执行的都是 dispatchEvent 等函数
   const eventPriority = getEventPriority(domEventName);
   let listenerWrapper;
   switch (eventPriority) {
-    case DiscreteEventPriority:
+    case DiscreteEventPriority: // 离散时间监听器 优先级为 1
       listenerWrapper = dispatchDiscreteEvent;
       break;
-    case ContinuousEventPriority:
+    case ContinuousEventPriority: // 用户阻塞事件监听器 4
       listenerWrapper = dispatchContinuousEvent;
       break;
-    case DefaultEventPriority:
+    case DefaultEventPriority: // 连续事件或其他事件监听器 16
     default:
       listenerWrapper = dispatchEvent;
       break;
@@ -121,6 +123,7 @@ function dispatchDiscreteEvent(
   ReactCurrentBatchConfig.transition = null;
   try {
     setCurrentUpdatePriority(DiscreteEventPriority);
+    debugger
     dispatchEvent(domEventName, eventSystemFlags, container, nativeEvent);
   } finally {
     setCurrentUpdatePriority(previousPriority);
@@ -147,14 +150,15 @@ function dispatchContinuousEvent(
 }
 
 export function dispatchEvent(
-  domEventName: DOMEventName,
-  eventSystemFlags: EventSystemFlags,
-  targetContainer: EventTarget,
+  domEventName: DOMEventName, // 事件名称
+  eventSystemFlags: EventSystemFlags, // 区别捕获和冒泡 冒泡0 捕获4
+  targetContainer: EventTarget, // 根 dom
   nativeEvent: AnyNativeEvent,
 ): void {
   if (!_enabled) {
     return;
   }
+
   if (enableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay) {
     dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay(
       domEventName,
@@ -174,7 +178,7 @@ export function dispatchEvent(
 
 function dispatchEventOriginal(
   domEventName: DOMEventName,
-  eventSystemFlags: EventSystemFlags,
+  eventSystemFlags: EventSystemFlags, // 区别捕获和冒泡 冒泡0 捕获4
   targetContainer: EventTarget,
   nativeEvent: AnyNativeEvent,
 ) {
@@ -183,6 +187,7 @@ function dispatchEventOriginal(
   // but now we use different bubble and capture handlers.
   // In eager mode, we attach capture listeners early, so we need
   // to filter them out until we fix the logic to handle them correctly.
+  // 捕获为false
   const allowReplay = (eventSystemFlags & IS_CAPTURE_PHASE) === 0;
 
   if (

@@ -179,7 +179,6 @@ export function createRoot(
   let onRecoverableError = defaultOnRecoverableError;
   let transitionCallbacks = null;
 
-debugger
   if (options !== null && options !== undefined) {
     if (__DEV__) {
       if ((options: any).hydrate) {
@@ -242,6 +241,7 @@ debugger
     container.nodeType === COMMENT_NODE
       ? (container.parentNode: any)
       : container;
+  // 向外层容器注册完所有事件
   listenToAllSupportedEvents(rootContainerElement);
 
   return new ReactDOMRoot(root);

@@ -85,6 +85,8 @@ type DispatchEntry = {|
 
 export type DispatchQueue = Array<DispatchEntry>;
 
+// 初始化全部Dom事件
+console.log('1️⃣ 初始化全部Dom事件');
 // TODO: remove top-level side effect.
 SimpleEventPlugin.registerEvents();
 EnterLeaveEventPlugin.registerEvents();
@@ -338,6 +340,7 @@ export function listenToNativeEvent(
     }
   }
 
+  // 捕获取0 如果是捕获按位或取4
   let eventSystemFlags = 0;
   if (isCapturePhaseListener) {
     eventSystemFlags |= IS_CAPTURE_PHASE;
@@ -384,19 +387,24 @@ const listeningMarker =
     .slice(2);
 
 export function listenToAllSupportedEvents (rootContainerElement: EventTarget) {
-  debugger
   if (!(rootContainerElement: any)[listeningMarker]) {
     (rootContainerElement: any)[listeningMarker] = true;
+    // allNativeEvents 是所有原生事件的集合(set类型)
+    console.log('allNativeEvents', allNativeEvents);
     allNativeEvents.forEach(domEventName => {
       // We handle selectionchange separately because it
       // doesn't bubble and needs to be on the document.
       if (domEventName !== 'selectionchange') {
+        // 有些事件不需要冒泡 所有需要阻断
         if (!nonDelegatedEvents.has(domEventName)) {
+          // false表示冒泡
           listenToNativeEvent(domEventName, false, rootContainerElement);
         }
+        // true捕获
         listenToNativeEvent(domEventName, true, rootContainerElement);
       }
     });
+    // 获取 document 节点
     const ownerDocument =
       (rootContainerElement: any).nodeType === DOCUMENT_NODE
         ? rootContainerElement
@@ -415,10 +423,11 @@ export function listenToAllSupportedEvents (rootContainerElement: EventTarget) {
 function addTrappedEventListener(
   targetContainer: EventTarget,
   domEventName: DOMEventName,
-  eventSystemFlags: EventSystemFlags,
-  isCapturePhaseListener: boolean,
+  eventSystemFlags: EventSystemFlags, // 区别捕获和冒泡 冒泡0 捕获4
+  isCapturePhaseListener: boolean, // false冒泡  true捕获
   isDeferredListenerForLegacyFBSupport?: boolean,
 ) {
+  // 通过优先级获取 listener
   let listener = createEventListenerWrapperWithPriority(
     targetContainer,
     domEventName,
