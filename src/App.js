@@ -24,7 +24,6 @@ function App() {
       <header
         className="App-header"
         onClick={() => {
-          debugger;
           console.log(2222);
           handleClick();
           setNum((number) => number + 1);

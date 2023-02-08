@@ -160,7 +160,6 @@ export function dispatchEvent(
   }
 
   if (enableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay) {
-    console.log(domEventName,eventSystemFlags)
     dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay(
       domEventName,
       eventSystemFlags,
@@ -281,6 +280,7 @@ function dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEve
     nativeEvent,
   );
   if (blockedOn === null) {
+    // 批量执行事件
     dispatchEventForPluginEventSystem(
       domEventName,
       eventSystemFlags,

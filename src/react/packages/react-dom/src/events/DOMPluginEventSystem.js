@@ -590,12 +590,17 @@ export function dispatchEventForPluginEventSystem(
       // If we find that "rootContainer", we find the parent fiber
       // sub-tree for that root and make that our ancestor instance.
       let node = targetInst;
+      // const isClick = domEventName === 'click';
+      // if (isClick) console.log(targetInst)
 
+      // 向上查找一直找到根节点
       mainLoop: while (true) {
         if (node === null) {
           return;
         }
         const nodeTag = node.tag;
+        // if (isClick) console.log(nodeTag, node.stateNode, nodeTag === HostRoot || nodeTag === HostPortal)
+        // 判断是否是根节点
         if (nodeTag === HostRoot || nodeTag === HostPortal) {
           let container = node.stateNode.containerInfo;
           if (isMatchingRootContainer(container, targetContainerNode)) {
