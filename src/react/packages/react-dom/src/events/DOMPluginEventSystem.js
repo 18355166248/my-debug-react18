@@ -443,6 +443,9 @@ function addTrappedEventListener(
     // the performance wins from the change. So we emulate
     // the existing behavior manually on the roots now.
     // https://github.com/facebook/react/issues/19651
+    // https://blog.csdn.net/qq_40409143/article/details/116259308
+    // 性能优化
+    // 所以passive:true的意思就是告诉浏览器，不会阻止默认事件，你放心的滚动吧，不用等待了。
     if (
       domEventName === 'touchstart' ||
       domEventName === 'touchmove' ||

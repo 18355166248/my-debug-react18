@@ -24,13 +24,17 @@ function App() {
       <header
         className="App-header"
         onClick={() => {
+          debugger;
+          console.log(2222);
           handleClick();
           setNum((number) => number + 1);
         }}
-        onClickCapture={captureClick}
+        // onClickCapture={captureClick}
       >
         App
-        <h1 onClick={handleClickChid} onClickCapture={captureClickChild}>
+        <h1
+        // onClick={handleClickChid} onClickCapture={captureClickChild}
+        >
           {num}
         </h1>
       </header>

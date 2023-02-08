@@ -114,7 +114,7 @@ export function createEventListenerWrapperWithPriority(
 
 function dispatchDiscreteEvent(
   domEventName,
-  eventSystemFlags,
+  eventSystemFlags, // 区别捕获和冒泡 冒泡0 捕获4
   container,
   nativeEvent,
 ) {
@@ -123,7 +123,7 @@ function dispatchDiscreteEvent(
   ReactCurrentBatchConfig.transition = null;
   try {
     setCurrentUpdatePriority(DiscreteEventPriority);
-    debugger
+    console.log(eventSystemFlags === 0 ? '冒泡' : '捕获', domEventName,container)
     dispatchEvent(domEventName, eventSystemFlags, container, nativeEvent);
   } finally {
     setCurrentUpdatePriority(previousPriority);
@@ -160,6 +160,7 @@ export function dispatchEvent(
   }
 
   if (enableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay) {
+    console.log(domEventName,eventSystemFlags)
     dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay(
       domEventName,
       eventSystemFlags,

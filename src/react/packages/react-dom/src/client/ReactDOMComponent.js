@@ -600,6 +600,7 @@ export function setInitialProperties(
       break;
     default:
       if (typeof props.onClick === 'function') {
+        console.log('props',props)
         // TODO: This cast may not be sound for SVG, MathML or custom elements.
         trapClickOnNonInteractiveElement(((domElement: any): HTMLElement));
       }
