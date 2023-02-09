@@ -58,12 +58,13 @@ function extractEvents(
   eventSystemFlags: EventSystemFlags, // 0冒泡  4捕获
   targetContainer: EventTarget,
 ): void {
-  if (domEventName === 'click') debugger
+  // if (domEventName === 'click') debugger
   // 获取事件对应的react事件(驼峰命名) 例: click 事件在 react 中叫 onClick
   const reactName = topLevelEventsToReactNames.get(domEventName);
   if (reactName === undefined) {
     return;
   }
+  // react 自己实现了一套event事件 包装了一下原生的 nativeEvent 事件
   let SyntheticEventCtor = SyntheticEvent; // 默认事件源
   let reactEventType: string = domEventName;
   // 根据事件获取对应的事件源
@@ -202,7 +203,7 @@ function extractEvents(
       // This is a breaking change that can wait until React 18.
       domEventName === 'scroll';
 
-    // 获取真正的执行函数
+    // 获取真正的执行函数列表
     const listeners = accumulateSinglePhaseListeners(
       targetInst, // 对应DOM 的 Fiber
       reactName, // react事件名
@@ -212,6 +213,7 @@ function extractEvents(
       nativeEvent, // Dom事件
     );
     if (listeners.length > 0) {
+      // 有的话就生成事件源
       // Intentionally create event lazily.
       const event = new SyntheticEventCtor(
         reactName,
@@ -220,6 +222,7 @@ function extractEvents(
         nativeEvent,
         nativeEventTarget,
       );
+      // push进更新队列
       dispatchQueue.push({event, listeners});
     }
   }

@@ -223,6 +223,7 @@ export const nonDelegatedEvents: Set<DOMEventName> = new Set([
   ...mediaEventTypes,
 ]);
 
+// 执行事件函数
 function executeDispatch(
   event: ReactSyntheticEvent,
   listener: Function,
@@ -230,19 +231,23 @@ function executeDispatch(
 ): void {
   const type = event.type || 'unknown-event';
   event.currentTarget = currentTarget;
+  // 这个里面包了很多层 目的就是为了执行 listener 这个事件方法
   invokeGuardedCallbackAndCatchFirstError(type, listener, undefined, event);
   event.currentTarget = null;
 }
 
 function processDispatchQueueItemsInOrder(
-  event: ReactSyntheticEvent,
-  dispatchListeners: Array<DispatchListener>,
-  inCapturePhase: boolean,
+  event: ReactSyntheticEvent, // 事件源
+  dispatchListeners: Array<DispatchListener>, // 事件列表
+  inCapturePhase: boolean, // 是否捕获
 ): void {
   let previousInstance;
   if (inCapturePhase) {
+    // 捕获的话倒序执行
     for (let i = dispatchListeners.length - 1; i >= 0; i--) {
-      const {instance, currentTarget, listener} = dispatchListeners[i];
+      const { instance, currentTarget, listener } = dispatchListeners[i];
+      // 是否已经阻止冒泡
+      // 这里可以判断是因为 react自己包装了一下原生event 模拟实现了 组织冒泡的事件
       if (instance !== previousInstance && event.isPropagationStopped()) {
         return;
       }
@@ -250,8 +255,10 @@ function processDispatchQueueItemsInOrder(
       previousInstance = instance;
     }
   } else {
+    // 冒泡的话正序执行
     for (let i = 0; i < dispatchListeners.length; i++) {
-      const {instance, currentTarget, listener} = dispatchListeners[i];
+      const { instance, currentTarget, listener } = dispatchListeners[i];
+      // 是否已经阻止冒泡
       if (instance !== previousInstance && event.isPropagationStopped()) {
         return;
       }
@@ -262,9 +269,10 @@ function processDispatchQueueItemsInOrder(
 }
 
 export function processDispatchQueue(
-  dispatchQueue: DispatchQueue,
-  eventSystemFlags: EventSystemFlags,
+  dispatchQueue: DispatchQueue, // 时间队列
+  eventSystemFlags: EventSystemFlags, // 0冒泡 4捕获
 ): void {
+  // 是否是捕获
   const inCapturePhase = (eventSystemFlags & IS_CAPTURE_PHASE) !== 0;
   for (let i = 0; i < dispatchQueue.length; i++) {
     const {event, listeners} = dispatchQueue[i];
@@ -272,6 +280,7 @@ export function processDispatchQueue(
     //  event system doesn't use pooling.
   }
   // This would be a good time to rethrow if any of the event handlers threw.
+  // 如果有错误 会抛出
   rethrowCaughtError();
 }
 
@@ -296,7 +305,14 @@ function dispatchEventsForPlugins(
     eventSystemFlags,
     targetContainer,
   );
+
+  // dispatchQueue 大概长这样
+  // [{
+    // event: {...}// react合成的事件源。
+    // listeners: [{instance: 当前fiber, listener: f(), currentTaget: dom},{...},{...}]
+  // }]
   // 消费事件
+  if (domEventName === 'click') debugger;
   processDispatchQueue(dispatchQueue, eventSystemFlags);
 }
 
@@ -670,9 +686,9 @@ export function dispatchEventForPluginEventSystem(
 }
 
 function createDispatchListener(
-  instance: null | Fiber,
-  listener: Function,
-  currentTarget: EventTarget,
+  instance: null | Fiber, // DOM fiber
+  listener: Function, // 事件函数
+  currentTarget: EventTarget, // 当前事件的 Dom
 ): DispatchListener {
   return {
     instance,
@@ -690,16 +706,17 @@ export function accumulateSinglePhaseListeners(
   nativeEvent: AnyNativeEvent, // DOM事件
 ): Array<DispatchListener> {
   const captureName = reactName !== null ? reactName + 'Capture' : null;
+  // react 事件名
   const reactEventName = inCapturePhase ? captureName : reactName;
   let listeners: Array<DispatchListener> = [];
 
   let instance = targetFiber;
   let lastHostComponent = null;
-
   // Accumulate all instances and listeners via the target -> root path.
   while (instance !== null) {
     const {stateNode, tag} = instance;
     // Handle listeners that are on HostComponents (i.e. <div>)
+    // HostComponent HTML 原生组件 如 a div标签
     if (tag === HostComponent && stateNode !== null) {
       lastHostComponent = stateNode;
 
@@ -728,9 +745,12 @@ export function accumulateSinglePhaseListeners(
 
       // Standard React on* listeners, i.e. onClick or onClickCapture
       if (reactEventName !== null) {
+        // 获取原生组件上的事件函数
         const listener = getListener(instance, reactEventName);
         if (listener != null) {
+          // if (nativeEventType === 'click') debugger
           listeners.push(
+            // 这里会返回一个对象
             createDispatchListener(instance, listener, lastHostComponent),
           );
         }

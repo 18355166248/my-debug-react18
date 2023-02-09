@@ -57,11 +57,13 @@ export default function getListener(
     // Work in progress (ex: onload events in incremental mode).
     return null;
   }
+  // 获取原生组件上的prop数据
   const props = getFiberCurrentPropsFromNode(stateNode);
   if (props === null) {
     // Work in progress.
     return null;
   }
+  // 获取对应的事件函数
   const listener = props[registrationName];
   if (shouldPreventMouseEvent(registrationName, inst.type, props)) {
     return null;
