@@ -50,20 +50,23 @@ import {IS_CAPTURE_PHASE} from '../EventSystemFlags';
 import {enableCreateEventHandleAPI} from 'shared/ReactFeatureFlags';
 
 function extractEvents(
-  dispatchQueue: DispatchQueue,
-  domEventName: DOMEventName,
-  targetInst: null | Fiber,
-  nativeEvent: AnyNativeEvent,
-  nativeEventTarget: null | EventTarget,
-  eventSystemFlags: EventSystemFlags,
+  dispatchQueue: DispatchQueue, // 待更新队列
+  domEventName: DOMEventName, // 事件名
+  targetInst: null | Fiber, // 对应DOM Fiber
+  nativeEvent: AnyNativeEvent, // DOM事件
+  nativeEventTarget: null | EventTarget, // 事件对应的DOM节点
+  eventSystemFlags: EventSystemFlags, // 0冒泡  4捕获
   targetContainer: EventTarget,
 ): void {
+  if (domEventName === 'click') debugger
+  // 获取事件对应的react事件(驼峰命名) 例: click 事件在 react 中叫 onClick
   const reactName = topLevelEventsToReactNames.get(domEventName);
   if (reactName === undefined) {
     return;
   }
-  let SyntheticEventCtor = SyntheticEvent;
+  let SyntheticEventCtor = SyntheticEvent; // 默认事件源
   let reactEventType: string = domEventName;
+  // 根据事件获取对应的事件源
   switch (domEventName) {
     case 'keypress':
       // Firefox creates a keypress event for function keys too. This removes
@@ -158,6 +161,7 @@ function extractEvents(
       break;
   }
 
+  // 是否的捕获
   const inCapturePhase = (eventSystemFlags & IS_CAPTURE_PHASE) !== 0;
   if (
     enableCreateEventHandleAPI &&
@@ -186,6 +190,10 @@ function extractEvents(
     // In the past, React has always bubbled them, but this can be surprising.
     // We're going to try aligning closer to the browser behavior by not bubbling
     // them in React either. We'll start by not bubbling onScroll, and then expand.
+    //有些事件不会在浏览器中冒泡。
+    //在过去，React总是让它们冒泡，但这可能令人惊讶。
+    //我们将尝试通过不冒泡来更接近浏览器行为
+    //他们也在React中。我们将从不在Scroll上冒泡开始，然后展开。
     const accumulateTargetOnly =
       !inCapturePhase &&
       // TODO: ideally, we'd eventually add all events from
@@ -194,13 +202,14 @@ function extractEvents(
       // This is a breaking change that can wait until React 18.
       domEventName === 'scroll';
 
+    // 获取真正的执行函数
     const listeners = accumulateSinglePhaseListeners(
-      targetInst,
-      reactName,
-      nativeEvent.type,
-      inCapturePhase,
-      accumulateTargetOnly,
-      nativeEvent,
+      targetInst, // 对应DOM 的 Fiber
+      reactName, // react事件名
+      nativeEvent.type, // Dom 事件名 例: click
+      inCapturePhase, // 是否捕获
+      accumulateTargetOnly, // 是否冒泡
+      nativeEvent, // Dom事件
     );
     if (listeners.length > 0) {
       // Intentionally create event lazily.

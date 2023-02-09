@@ -116,8 +116,9 @@ function dispatchDiscreteEvent(
   domEventName,
   eventSystemFlags, // 区别捕获和冒泡 冒泡0 捕获4
   container,
-  nativeEvent,
+  nativeEvent, // 原生事件
 ) {
+  console.log('nativeEvent', nativeEvent)
   const previousPriority = getCurrentUpdatePriority();
   const prevTransition = ReactCurrentBatchConfig.transition;
   ReactCurrentBatchConfig.transition = null;
@@ -149,6 +150,7 @@ function dispatchContinuousEvent(
   }
 }
 
+// 点击事件触发
 export function dispatchEvent(
   domEventName: DOMEventName, // 事件名称
   eventSystemFlags: EventSystemFlags, // 区别捕获和冒泡 冒泡0 捕获4
@@ -159,6 +161,7 @@ export function dispatchEvent(
     return;
   }
 
+  // enableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay 这个值目前看一直为true
   if (enableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay) {
     dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay(
       domEventName,
@@ -268,11 +271,12 @@ function dispatchEventOriginal(
 }
 
 function dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEventReplay(
-  domEventName: DOMEventName,
-  eventSystemFlags: EventSystemFlags,
-  targetContainer: EventTarget,
-  nativeEvent: AnyNativeEvent,
+  domEventName: DOMEventName, // 事件名
+  eventSystemFlags: EventSystemFlags, // 0冒泡   4捕获
+  targetContainer: EventTarget, // DOM
+  nativeEvent: AnyNativeEvent, // 原生DOM事件
 ) {
+  // 在这里面 赋值 return_targetInst 为对应事件 DOM 的 Fiber节点
   let blockedOn = findInstanceBlockingEvent(
     domEventName,
     eventSystemFlags,
@@ -285,7 +289,7 @@ function dispatchEventWithEnableCapturePhaseSelectiveHydrationWithoutDiscreteEve
       domEventName,
       eventSystemFlags,
       nativeEvent,
-      return_targetInst,
+      return_targetInst, // 点击 DOM 的 FiberNode
       targetContainer,
     );
     clearIfContinuousEvent(domEventName, nativeEvent);
@@ -367,18 +371,26 @@ export function findInstanceBlockingEvent(
   // TODO: Warn if _enabled is false.
 
   return_targetInst = null;
+  // if (domEventName === 'click') {
+  //   debugger
+  // }
 
+  // 获取对应事件的 DOM 节点
   const nativeEventTarget = getEventTarget(nativeEvent);
+  // 获取 DOM 对应的 Fiber节点
   let targetInst = getClosestInstanceFromNode(nativeEventTarget);
 
   if (targetInst !== null) {
+      // if (domEventName === 'click') {
+      //   debugger
+      // }
     const nearestMounted = getNearestMountedFiber(targetInst);
     if (nearestMounted === null) {
       // This tree has been unmounted already. Dispatch without a target.
       targetInst = null;
     } else {
       const tag = nearestMounted.tag;
-      if (tag === SuspenseComponent) {
+      if (tag === SuspenseComponent) { // SuspenseComponent 13
         const instance = getSuspenseInstanceFromFiber(nearestMounted);
         if (instance !== null) {
           // Queue the event to be replayed later. Abort dispatching since we
@@ -391,7 +403,7 @@ export function findInstanceBlockingEvent(
         // the whole system, dispatch the event without a target.
         // TODO: Warn.
         targetInst = null;
-      } else if (tag === HostRoot) {
+      } else if (tag === HostRoot) { // HostRoot 3
         const root: FiberRoot = nearestMounted.stateNode;
         if (isRootDehydrated(root)) {
           // If this happens during a replay something went wrong and it might block
@@ -408,7 +420,7 @@ export function findInstanceBlockingEvent(
       }
     }
   }
-  return_targetInst = targetInst;
+  return_targetInst = targetInst; // 赋值 return_targetInst
   // We're not blocked on anything.
   return null;
 }

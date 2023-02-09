@@ -95,14 +95,15 @@ SelectEventPlugin.registerEvents();
 BeforeInputEventPlugin.registerEvents();
 
 function extractEvents(
-  dispatchQueue: DispatchQueue,
-  domEventName: DOMEventName,
-  targetInst: null | Fiber,
-  nativeEvent: AnyNativeEvent,
-  nativeEventTarget: null | EventTarget,
-  eventSystemFlags: EventSystemFlags,
-  targetContainer: EventTarget,
+  dispatchQueue: DispatchQueue, // 待更新队列
+  domEventName: DOMEventName, // 事件名
+  targetInst: null | Fiber, // DOM Fiber
+  nativeEvent: AnyNativeEvent, // DOM 事件
+  nativeEventTarget: null | EventTarget, // 点击的对应DOM
+  eventSystemFlags: EventSystemFlags, // 0冒泡  4捕获
+  targetContainer: EventTarget, // 根节点 DOM
 ) {
+  // if (domEventName === 'click')  debugger
   // TODO: we should remove the concept of a "SimpleEventPlugin".
   // This is the basic functionality of the event system. All
   // the other plugins are essentially polyfills. So the plugin
@@ -275,14 +276,17 @@ export function processDispatchQueue(
 }
 
 function dispatchEventsForPlugins(
-  domEventName: DOMEventName,
-  eventSystemFlags: EventSystemFlags,
-  nativeEvent: AnyNativeEvent,
-  targetInst: null | Fiber,
+  domEventName: DOMEventName, // 事件名
+  eventSystemFlags: EventSystemFlags, // 0冒泡 4捕获
+  nativeEvent: AnyNativeEvent, // 原生事件
+  targetInst: null | Fiber, // 对应DOM事件的Fiber节点
   targetContainer: EventTarget,
 ): void {
+  // if (domEventName === 'click')  debugger
   const nativeEventTarget = getEventTarget(nativeEvent);
+  // 待更新队列
   const dispatchQueue: DispatchQueue = [];
+  // 收集事件
   extractEvents(
     dispatchQueue,
     domEventName,
@@ -292,6 +296,7 @@ function dispatchEventsForPlugins(
     eventSystemFlags,
     targetContainer,
   );
+  // 消费事件
   processDispatchQueue(dispatchQueue, eventSystemFlags);
 }
 
@@ -547,11 +552,11 @@ function isMatchingRootContainer(
 }
 
 export function dispatchEventForPluginEventSystem(
-  domEventName: DOMEventName,
-  eventSystemFlags: EventSystemFlags,
-  nativeEvent: AnyNativeEvent,
-  targetInst: null | Fiber,
-  targetContainer: EventTarget,
+  domEventName: DOMEventName,  // 事件名
+  eventSystemFlags: EventSystemFlags, // 0冒泡 捕获4
+  nativeEvent: AnyNativeEvent, // 原生 DOM 事件
+  targetInst: null | Fiber, // 对应 DOM 的 fiber 节点
+  targetContainer: EventTarget, // 根节点 DOM
 ): void {
   let ancestorInst = targetInst;
   if (
@@ -651,6 +656,8 @@ export function dispatchEventForPluginEventSystem(
     }
   }
 
+  // 批量更新事件
+  // if (domEventName === 'click') debugger
   batchedUpdates(() =>
     dispatchEventsForPlugins(
       domEventName,
@@ -675,12 +682,12 @@ function createDispatchListener(
 }
 
 export function accumulateSinglePhaseListeners(
-  targetFiber: Fiber | null,
-  reactName: string | null,
-  nativeEventType: string,
-  inCapturePhase: boolean,
-  accumulateTargetOnly: boolean,
-  nativeEvent: AnyNativeEvent,
+  targetFiber: Fiber | null,  // 对应DOM 的 Fiber
+  reactName: string | null, // react事件名
+  nativeEventType: string, // Dom 事件名 例: click
+  inCapturePhase: boolean, // 是否捕获
+  accumulateTargetOnly: boolean, // 是否冒泡
+  nativeEvent: AnyNativeEvent, // DOM事件
 ): Array<DispatchListener> {
   const captureName = reactName !== null ? reactName + 'Capture' : null;
   const reactEventName = inCapturePhase ? captureName : reactName;
