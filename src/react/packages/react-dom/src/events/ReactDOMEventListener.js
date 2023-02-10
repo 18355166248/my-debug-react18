@@ -84,8 +84,8 @@ export function createEventListenerWrapper(
 }
 
 export function createEventListenerWrapperWithPriority(
-  targetContainer: EventTarget,
-  domEventName: DOMEventName,
+  targetContainer: EventTarget, // 根节点 DOM
+  domEventName: DOMEventName, // 事件名
   eventSystemFlags: EventSystemFlags, // 区别捕获和冒泡 冒泡0 捕获4
 ): Function {
   // 针对不同的事件返回不同的数字(事件优先级) 数字对应的就行下面 switch 里面值

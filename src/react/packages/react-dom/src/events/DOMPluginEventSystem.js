@@ -247,7 +247,7 @@ function processDispatchQueueItemsInOrder(
     for (let i = dispatchListeners.length - 1; i >= 0; i--) {
       const { instance, currentTarget, listener } = dispatchListeners[i];
       // 是否已经阻止冒泡
-      // 这里可以判断是因为 react自己包装了一下原生event 模拟实现了 组织冒泡的事件
+      // 这里可以判断是因为 react自己包装了一下原生event 模拟实现了阻止冒泡的事件
       if (instance !== previousInstance && event.isPropagationStopped()) {
         return;
       }
@@ -416,7 +416,7 @@ export function listenToAllSupportedEvents (rootContainerElement: EventTarget) {
       // We handle selectionchange separately because it
       // doesn't bubble and needs to be on the document.
       if (domEventName !== 'selectionchange') {
-        // 有些事件不需要冒泡 所有需要阻断
+        // 有些事件不需要冒泡 所以需要阻断
         if (!nonDelegatedEvents.has(domEventName)) {
           // false表示冒泡
           listenToNativeEvent(domEventName, false, rootContainerElement);
