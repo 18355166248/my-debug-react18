@@ -42,6 +42,7 @@ import {
 } from '../SchedulerProfiling';
 
 let getCurrentTime;
+// 判断当前浏览器支付支持 performance
 const hasPerformanceNow =
   typeof performance === 'object' && typeof performance.now === 'function';
 

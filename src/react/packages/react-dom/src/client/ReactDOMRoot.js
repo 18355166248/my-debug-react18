@@ -167,6 +167,7 @@ export function createRoot(
   container: Element | Document | DocumentFragment,
   options?: CreateRootOptions,
 ): RootType {
+  // 判断初始化节点是否是一个合法的 dom 节点
   if (!isValidContainer(container)) {
     throw new Error('createRoot(...): Target container is not a DOM element.');
   }
@@ -221,7 +222,7 @@ export function createRoot(
     }
   }
 
-  // 返回根节点
+  // 返回 fiber 根节点
   const root = createContainer(
     container, // 入口dom
     ConcurrentRoot, // 1
@@ -241,7 +242,7 @@ export function createRoot(
     container.nodeType === COMMENT_NODE
       ? (container.parentNode: any)
       : container;
-  // 向外层容器注册完所有事件
+  // 向外层容器注册完所有dom事件
   listenToAllSupportedEvents(rootContainerElement);
 
   return new ReactDOMRoot(root);

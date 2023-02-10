@@ -320,8 +320,8 @@ export function createHydrationContainer(
 }
 
 export function updateContainer(
-  element: ReactNodeList,
-  container: OpaqueRoot,
+  element: ReactNodeList, // 需要渲染的起始节点
+  container: OpaqueRoot, // 根节点
   parentComponent: ?React$Component<any, any>,
   callback: ?Function,
 ): Lane {

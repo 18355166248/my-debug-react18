@@ -324,17 +324,19 @@ export function updateContainer(
   parentComponent: ?React$Component<any, any>,
   callback: ?Function,
 ): Lane {
+  debugger
   if (__DEV__) {
     onScheduleRoot(container, element);
   }
   const current = container.current;
-  const eventTime = requestEventTime();
-  const lane = requestUpdateLane(current);
+  const eventTime = requestEventTime(); // 执行的是浏览器 performance.now 方法, 返回一个表示从性能测量时刻开始经过的毫秒数 自创建上下文以来经过的时间
+  const lane = requestUpdateLane(current); // 这里最后拿到的是 src/react/packages/react-reconciler/src/ReactFiberLane.old.js 下的 DefaultLane 也就是 16
 
   if (enableSchedulingProfiler) {
     markRenderScheduled(lane);
   }
 
+  // 初始化 context 是空对象
   const context = getContextForSubtree(parentComponent);
   if (container.context === null) {
     container.context = context;

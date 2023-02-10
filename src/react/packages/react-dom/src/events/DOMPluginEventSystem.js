@@ -312,7 +312,7 @@ function dispatchEventsForPlugins(
     // listeners: [{instance: 当前fiber, listener: f(), currentTaget: dom},{...},{...}]
   // }]
   // 消费事件
-  if (domEventName === 'click') debugger;
+  // if (domEventName === 'click') debugger;
   processDispatchQueue(dispatchQueue, eventSystemFlags);
 }
 

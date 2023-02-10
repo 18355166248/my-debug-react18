@@ -425,7 +425,7 @@ export function getWorkInProgressRoot(): FiberRoot | null {
   return workInProgressRoot;
 }
 
-export function requestEventTime() {
+export function requestEventTime () {
   if ((executionContext & (RenderContext | CommitContext)) !== NoContext) {
     // We're inside React, so it's fine to read the actual time.
     return now();
@@ -436,6 +436,8 @@ export function requestEventTime() {
     return currentEventTime;
   }
   // This is the first update since React yielded. Compute a new start time.
+  // 这是自React产生以来的第一次更新。计算新的开始时间。
+  // 这个now 方法是在 src/react/packages/scheduler/src/forks/Scheduler.js 下的 getCurrentTime 方法表示浏览器的 performance.now 返回一个表示从性能测量时刻开始经过的毫秒数
   currentEventTime = now();
   return currentEventTime;
 }
