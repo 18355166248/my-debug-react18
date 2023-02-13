@@ -324,7 +324,6 @@ export function updateContainer(
   parentComponent: ?React$Component<any, any>,
   callback: ?Function,
 ): Lane {
-  debugger
   if (__DEV__) {
     onScheduleRoot(container, element);
   }
@@ -360,7 +359,7 @@ export function updateContainer(
       );
     }
   }
-
+  // 根据车道优先级, 创建update对象
   const update = createUpdate(eventTime, lane);
   // Caution: React DevTools currently depends on this property
   // being called "element".
@@ -379,9 +378,11 @@ export function updateContainer(
     }
     update.callback = callback;
   }
-
+  // 并加入fiber.updateQueue.pending队列
+  // 返回的 root 是根节点fiber
   const root = enqueueUpdate(current, update, lane);
   if (root !== null) {
+    // 进入reconciler运作流程中的`输入`环节
     scheduleUpdateOnFiber(root, current, lane, eventTime);
     entangleTransitions(root, current, lane);
   }

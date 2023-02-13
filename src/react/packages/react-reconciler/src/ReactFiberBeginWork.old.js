@@ -3796,6 +3796,7 @@ function beginWork(
       );
     }
     case FunctionComponent: {
+      // 函数方法
       const Component = workInProgress.type;
       const unresolvedProps = workInProgress.pendingProps;
       const resolvedProps =

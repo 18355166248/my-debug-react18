@@ -421,6 +421,7 @@ export function renderWithHooks<Props, SecondArg>(
       // This dispatcher does that.
       ReactCurrentDispatcher.current = HooksDispatcherOnMountWithHookTypesInDEV;
     } else {
+      // 初始化
       ReactCurrentDispatcher.current = HooksDispatcherOnMountInDEV;
     }
   } else {
@@ -2254,7 +2255,6 @@ function dispatchSetState<S, A>(
     eagerState: null,
     next: (null: any),
   };
-
   if (isRenderPhaseUpdate(fiber)) {
     enqueueRenderPhaseUpdate(queue, update);
   } else {
@@ -2306,6 +2306,8 @@ function dispatchSetState<S, A>(
       }
     }
 
+    debugger
+    // 将 queue 放入全局变量 concurrentQueues
     const root = enqueueConcurrentHookUpdate(fiber, queue, update, lane);
     if (root !== null) {
       const eventTime = requestEventTime();

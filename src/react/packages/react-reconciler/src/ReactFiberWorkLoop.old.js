@@ -528,10 +528,10 @@ function requestRetryLane(fiber: Fiber) {
 }
 
 export function scheduleUpdateOnFiber(
-  root: FiberRoot,
-  fiber: Fiber,
-  lane: Lane,
-  eventTime: number,
+  root: FiberRoot, // 根节点 filber
+  fiber: Fiber, // 需要更新的节点
+  lane: Lane, // 表示 update 优先级
+  eventTime: number, // 自创建上下文以来经过的时间
 ) {
   checkForNestedUpdates();
 
@@ -549,7 +549,6 @@ export function scheduleUpdateOnFiber(
 
   // Mark that the root has a pending update.
   markRootUpdated(root, lane, eventTime);
-
   if (
     (executionContext & RenderContext) !== NoLanes &&
     root === workInProgressRoot
@@ -633,7 +632,7 @@ export function scheduleUpdateOnFiber(
         markRootSuspended(root, workInProgressRootRenderLanes);
       }
     }
-
+    // 初次渲染/对比更新
     ensureRootIsScheduled(root, eventTime);
     if (
       lane === SyncLane &&
@@ -689,6 +688,7 @@ export function isUnsafeClassRenderPhaseUpdate(fiber: Fiber) {
 // root; if a task was already scheduled, we'll check to make sure the priority
 // of the existing task is the same as the priority of the next level that the
 // root has work on. This function is called on every update, and right before
+// 每次更新都会调用此函数
 // exiting a task.
 function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   const existingCallbackNode = root.callbackNode;
@@ -705,6 +705,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
 
   if (nextLanes === NoLanes) {
     // Special case: There's nothing to work on.
+    // 没有需要工作的
     if (existingCallbackNode !== null) {
       cancelCallback(existingCallbackNode);
     }
@@ -813,7 +814,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     }
     newCallbackNode = scheduleCallback(
       schedulerPriorityLevel,
-      performConcurrentWorkOnRoot.bind(null, root),
+      performConcurrentWorkOnRoot.bind(null, root), // 执行初次渲染
     );
   }
 
@@ -875,6 +876,7 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
     !includesBlockingLane(root, lanes) &&
     !includesExpiredLane(root, lanes) &&
     (disableSchedulerTimeoutInWorkLoop || !didTimeout);
+  // 从root节点开始, 至上而下更新
   let exitStatus = shouldTimeSlice
     ? renderRootConcurrent(root, lanes)
     : renderRootSync(root, lanes);
@@ -916,7 +918,7 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
       // to the main thread, if it was fast enough, or if it expired. We could
       // skip the consistency check in that case, too.
       const renderWasConcurrent = !includesBlockingLane(root, lanes);
-      const finishedWork: Fiber = (root.current.alternate: any);
+      const finishedWork: Fiber = (root.current.alternate: any); // fiber 节点
       if (
         renderWasConcurrent &&
         !isRenderConsistentWithExternalStores(finishedWork)
@@ -946,8 +948,10 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
 
       // We now have a consistent tree. The next step is either to commit it,
       // or, if something suspended, wait to commit it after a timeout.
+      // 把最新的fiber树挂载到fiberRoot.finishedWork上
       root.finishedWork = finishedWork;
       root.finishedLanes = lanes;
+      // 开始执行
       finishConcurrentRender(root, exitStatus, lanes);
     }
   }
@@ -1143,6 +1147,7 @@ function finishConcurrentRender(root, exitStatus, lanes) {
     }
     case RootCompleted: {
       // The work completed. Ready to commit.
+      // 工作已经完成 待提交
       commitRoot(
         root,
         workInProgressRootRecoverableErrors,
@@ -1726,6 +1731,7 @@ function renderRootSync(root: FiberRoot, lanes: Lanes) {
     markRenderStopped();
   }
 
+  // 会重置workInProgressRoot = null, 表明没有正在进行中的render.
   // Set this to null to indicate there's no in-progress render.
   workInProgressRoot = null;
   workInProgressRootRenderLanes = NoLanes;
@@ -1825,6 +1831,7 @@ function renderRootConcurrent(root: FiberRoot, lanes: Lanes) {
 /** @noinline */
 function workLoopConcurrent() {
   // Perform work until Scheduler asks us to yield
+  // 相比 workLoopSync 多了一个停顿机制, 这个机制实现了时间切片和可终端渲染
   while (workInProgress !== null && !shouldYield()) {
     performUnitOfWork(workInProgress);
   }
@@ -1840,6 +1847,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   let next;
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
     startProfilerTimer(unitOfWork);
+    // 探寻阶段
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
     stopProfilerTimerIfRunningAndRecordDelta(unitOfWork, true);
   } else {
@@ -1849,6 +1857,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   resetCurrentDebugFiberInDEV();
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
   if (next === null) {
+    // 向上回溯 直到回到根节点结束
     // If this doesn't spawn new work, complete the current work.
     completeUnitOfWork(unitOfWork);
   } else {
@@ -1858,6 +1867,7 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   ReactCurrentOwner.current = null;
 }
 
+// 向上回溯
 function completeUnitOfWork(unitOfWork: Fiber): void {
   // Attempt to complete the current unit of work, then move to the next
   // sibling. If there are no more siblings, return to the parent fiber.
@@ -1873,6 +1883,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
     if ((completedWork.flags & Incomplete) === NoFlags) {
       setCurrentDebugFiberInDEV(completedWork);
       let next;
+      // 1. 处理Fiber节点, 会调用渲染器(调用react-dom包, 关联Fiber节点和dom对象, 绑定事件等)
       if (
         !enableProfilerTimer ||
         (completedWork.mode & ProfileMode) === NoMode
@@ -1887,6 +1898,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
       resetCurrentDebugFiberInDEV();
 
       if (next !== null) {
+        // 如果派生出其他的子节点, 则回到`beginWork`阶段进行处理
         // Completing this fiber spawned new work. Work on that next.
         workInProgress = next;
         return;
@@ -1952,6 +1964,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
   } while (completedWork !== null);
 
   // We've reached the root.
+  // 已回溯到根节点, 设置workInProgressRootExitStatus = RootCompleted
   if (workInProgressRootExitStatus === RootInProgress) {
     workInProgressRootExitStatus = RootCompleted;
   }

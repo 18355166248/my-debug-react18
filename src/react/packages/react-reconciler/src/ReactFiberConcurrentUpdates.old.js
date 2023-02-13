@@ -86,6 +86,7 @@ export function enqueueConcurrentHookUpdate<S, A>(
   }
   queue.interleaved = update;
 
+  // 只在对比更新阶段才发挥出它的作用
   return markUpdateLaneFromFiberToRoot(fiber, lane);
 }
 

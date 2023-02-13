@@ -1007,6 +1007,7 @@ function completeWork(
             markUpdate(workInProgress);
           }
         } else {
+          // 创建DOM实例 instance 就是 DOM
           const instance = createInstance(
             type,
             newProps,
@@ -1014,14 +1015,15 @@ function completeWork(
             currentHostContext,
             workInProgress,
           );
-
+          // 执行 appendChild 并循环找到所有的兄弟节点执行 appendChild
           appendAllChildren(instance, workInProgress, false, false);
-
+          // 设置stateNode属性, 指向DOM对象
           workInProgress.stateNode = instance;
 
           // Certain renderers require commit-time effects for initial mount.
           // (eg DOM renderer supports auto-focus for certain elements).
           // Make sure such renderers get scheduled for later work.
+          // 3. 设置DOM对象的属性, 绑定事件等
           if (
             finalizeInitialChildren(
               instance,
@@ -1031,12 +1033,14 @@ function completeWork(
               currentHostContext,
             )
           ) {
+            // 设置fiber.flags标记(Update)
             markUpdate(workInProgress);
           }
         }
 
         if (workInProgress.ref !== null) {
           // If there is a ref on a host node we need to schedule a callback
+          // 设置fiber.flags标记(Ref)
           markRef(workInProgress);
         }
       }
