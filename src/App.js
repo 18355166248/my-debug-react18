@@ -1,8 +1,14 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 function App() {
   const [num, setNum] = useState(0);
+
+  useEffect(() => {
+    setTimeout(() => {
+      setNum((number) => number + 1);
+    }, 1000);
+  }, []);
 
   function handleClick() {
     console.log("父级冒泡阶段");

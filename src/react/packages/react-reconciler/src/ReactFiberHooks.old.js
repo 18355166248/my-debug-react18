@@ -2306,8 +2306,9 @@ function dispatchSetState<S, A>(
       }
     }
 
+    // 新建的情况下将 queue 放入全局变量 concurrentQueues
+    // 并向上直到HostRootFiber, 设置父路径上所有节点(也包括fiber.alternate)的fiber.childLanes. 告知是否需要更新
     debugger
-    // 将 queue 放入全局变量 concurrentQueues
     const root = enqueueConcurrentHookUpdate(fiber, queue, update, lane);
     if (root !== null) {
       const eventTime = requestEventTime();

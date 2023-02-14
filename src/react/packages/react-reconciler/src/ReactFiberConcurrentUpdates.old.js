@@ -140,14 +140,19 @@ export function enqueueConcurrentRenderForLane(fiber: Fiber, lane: Lane) {
 // compatibility and should always be accompanied by a warning.
 export const unsafe_markUpdateLaneFromFiberToRoot = markUpdateLaneFromFiberToRoot;
 
+// 以sourceFiber为起点, 设置起点的fiber.lanes
+// 从起点开始, 直到HostRootFiber, 设置父路径上所有节点(也包括fiber.alternate)的fiber.childLanes.
+// 通过设置fiber.lanes和fiber.childLanes就可以辅助判断子树是否需要更新(在下文循环构造中详细说明).
 function markUpdateLaneFromFiberToRoot(
-  sourceFiber: Fiber,
-  lane: Lane,
+  sourceFiber: Fiber, // sourceFiber表示被更新的节点
+  lane: Lane, // lane表示update优先级
 ): FiberRoot | null {
   // Update the source fiber's lanes
+  // 将update优先级设置到sourceFiber.lanes
   sourceFiber.lanes = mergeLanes(sourceFiber.lanes, lane);
   let alternate = sourceFiber.alternate;
   if (alternate !== null) {
+    // 同时设置sourceFiber.alternate的优先级
     alternate.lanes = mergeLanes(alternate.lanes, lane);
   }
   if (__DEV__) {
@@ -159,6 +164,7 @@ function markUpdateLaneFromFiberToRoot(
     }
   }
   // Walk the parent path to the root and update the child lanes.
+  // 2. 从sourceFiber开始, 向上遍历所有节点, 直到HostRoot. 设置沿途所有节点(包括alternate)的childLanes
   let node = sourceFiber;
   let parent = sourceFiber.return;
   while (parent !== null) {

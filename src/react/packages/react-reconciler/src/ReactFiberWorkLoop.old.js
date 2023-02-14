@@ -812,6 +812,8 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
         schedulerPriorityLevel = NormalSchedulerPriority;
         break;
     }
+    // 执行 src/react/packages/scheduler/src/forks/Scheduler.js 下的 unstable_scheduleCallback
+    // 会执行 performWorkUntilDeadline , performWorkUntilDeadline会执行 下面的 performConcurrentWorkOnRoot 也就是渲染
     newCallbackNode = scheduleCallback(
       schedulerPriorityLevel,
       performConcurrentWorkOnRoot.bind(null, root), // 执行初次渲染
@@ -948,7 +950,8 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
 
       // We now have a consistent tree. The next step is either to commit it,
       // or, if something suspended, wait to commit it after a timeout.
-      // 把最新的fiber树挂载到fiberRoot.finishedWork上
+      // 把最新的fiber树挂载到 fiberRoot.finishedWork 上
+      // 注意fiberRoot.finishedWork 和 fiberRoot.current 指针,在 commitRoot 阶段会进行处理
       root.finishedWork = finishedWork;
       root.finishedLanes = lanes;
       // 开始执行
@@ -1837,17 +1840,20 @@ function workLoopConcurrent() {
   }
 }
 
+// unitOfWork就是被传入的workInProgress
 function performUnitOfWork(unitOfWork: Fiber): void {
   // The current, flushed, state of this fiber is the alternate. Ideally
   // nothing should rely on this, but relying on it here means that we don't
   // need an additional field on the work in progress.
+  // current 就是放弃页面正在使用的 fiber 节点
+  // unitOfWork 就是当前正在构造的 fiber 节点
   const current = unitOfWork.alternate;
   setCurrentDebugFiberInDEV(unitOfWork);
 
   let next;
   if (enableProfilerTimer && (unitOfWork.mode & ProfileMode) !== NoMode) {
     startProfilerTimer(unitOfWork);
-    // 探寻阶段
+    // 探寻阶段 beginWork 就是 src/react/packages/react-reconciler/src/ReactFiberBeginWork.old.js 下的 beginWork
     next = beginWork(current, unitOfWork, subtreeRenderLanes);
     stopProfilerTimerIfRunningAndRecordDelta(unitOfWork, true);
   } else {
@@ -1857,8 +1863,10 @@ function performUnitOfWork(unitOfWork: Fiber): void {
   resetCurrentDebugFiberInDEV();
   unitOfWork.memoizedProps = unitOfWork.pendingProps;
   if (next === null) {
+    // 如果没有派生出新的节点, 则进入 completeUnitOfWork 阶段, 传入的是当前 unitOfWork
     // 向上回溯 直到回到根节点结束
     // If this doesn't spawn new work, complete the current work.
+    // completeUnitOfWork(unitOfWork)函数(源码地址)在初次创建和对比更新逻辑一致, 都是处理beginWork 阶段已经创建出来的 fiber 节点, 最后创建(更新)DOM 对象, 并上移副作用队列.
     completeUnitOfWork(unitOfWork);
   } else {
     workInProgress = next;
@@ -1954,6 +1962,7 @@ function completeUnitOfWork(unitOfWork: Fiber): void {
     const siblingFiber = completedWork.sibling;
     if (siblingFiber !== null) {
       // If there is more work to do in this returnFiber, do that next.
+      // 回溯 发现有兄弟节点 继续执行 performUnitOfWork
       workInProgress = siblingFiber;
       return;
     }

@@ -308,7 +308,6 @@ function unstable_wrapCallback(callback) {
 
 function unstable_scheduleCallback(priorityLevel, callback, options) {
   var currentTime = getCurrentTime();
-
   var startTime;
   if (typeof options === 'object' && options !== null) {
     var delay = options.delay;
@@ -514,6 +513,7 @@ function forceFrameRate(fps) {
 }
 
 const performWorkUntilDeadline = () => {
+  debugger
   if (scheduledHostCallback !== null) {
     const currentTime = getCurrentTime();
     // Keep track of the start time so we can measure how long the main thread

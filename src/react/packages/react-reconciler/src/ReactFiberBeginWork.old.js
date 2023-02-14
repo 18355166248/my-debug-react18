@@ -285,6 +285,13 @@ if (__DEV__) {
   didWarnAboutDefaultPropsOnFunctionComponent = {};
 }
 
+// 调和函数是updateXXX函数中的一项重要逻辑, 它的作用是向下生成子节点, 并设置fiber.flags.
+// 初次创建时fiber节点没有比较对象, 所以在向下生成子节点的时候没有任何多余的逻辑, 只管创建就行.
+// 对比更新时需要把ReactElement对象与旧fiber对象进行比较, 来判断是否需要复用旧fiber对象.
+
+// 给新增,移动,和删除节点设置fiber.flags(新增,移动: Placement, 删除: Deletion)
+// 如果是需要删除的fiber, 除了自身打上Deletion之外, 还要将其添加到父节点的effects链表中(正常副作用队列的处理是在completeWork函数, 但是该节点(被删除)会脱离fiber树, 不会再进入completeWork阶段, 所以在beginWork阶段提前加入副作用队列).
+
 export function reconcileChildren(
   current: Fiber | null,
   workInProgress: Fiber,
@@ -1030,6 +1037,7 @@ function updateFunctionComponent(
     markComponentRenderStopped();
   }
 
+  // 表示无需更新
   if (current !== null && !didReceiveUpdate) {
     bailoutHooks(current, workInProgress, renderLanes);
     return bailoutOnAlreadyFinishedWork(current, workInProgress, renderLanes);
@@ -1041,6 +1049,10 @@ function updateFunctionComponent(
 
   // React DevTools reads this flag.
   workInProgress.flags |= PerformedWork;
+  // 调和函数
+  // 调和函数是updateXXX函数中的一项重要逻辑, 它的作用是向下生成子节点, 并设置fiber.flags.
+  // 初次创建时fiber节点没有比较对象, 所以在向下生成子节点的时候没有任何多余的逻辑, 只管创建就行.
+  // 对比更新时需要把ReactElement对象与旧fiber对象进行比较, 来判断是否需要复用旧fiber对象.
   reconcileChildren(current, workInProgress, nextChildren, renderLanes);
   return workInProgress.child;
 }
@@ -3367,6 +3379,7 @@ function bailoutOnAlreadyFinishedWork(
 
   // Check if the children have any pending work.
   if (!includesSomeLane(renderLanes, workInProgress.childLanes)) {
+    // 渲染优先级不包括 workInProgress.childLanes, 表明子节点也无需更新. 返回null, 直接进入回溯阶段.
     // The children don't have any work either. We can skip them.
     // TODO: Once we add back resuming, we should check if the children are
     // a work-in-progress set. If so, we need to transfer their effects.
@@ -3385,6 +3398,7 @@ function bailoutOnAlreadyFinishedWork(
 
   // This fiber doesn't have work, but its subtree does. Clone the child
   // fibers and continue.
+  // 本fiber虽然不用更新, 但是子节点需要更新. clone并返回子节点
   cloneChildFibers(current, workInProgress);
   return workInProgress.child;
 }
@@ -3475,8 +3489,8 @@ function checkScheduledUpdateOrContext(
 }
 
 function attemptEarlyBailoutIfNoScheduledUpdate(
-  current: Fiber,
-  workInProgress: Fiber,
+  current: Fiber, // 当前页面使用的 fiber 节点
+  workInProgress: Fiber, // 当前正在创建的 fiber 节点
   renderLanes: Lanes,
 ) {
   // This fiber does not have any pending work. Bailout without entering
@@ -3706,6 +3720,7 @@ function beginWork(
   }
 
   if (current !== null) {
+    // 进入对比
     const oldProps = current.memoizedProps;
     const newProps = workInProgress.pendingProps;
 
@@ -3731,6 +3746,7 @@ function beginWork(
         // may not be work scheduled on `current`, so we check for this flag.
         (workInProgress.flags & DidCapture) === NoFlags
       ) {
+        // 当前fiber节点无需更新
         // No pending updates or context. Bail out now.
         didReceiveUpdate = false;
         return attemptEarlyBailoutIfNoScheduledUpdate(
@@ -3775,8 +3791,10 @@ function beginWork(
   // the update queue. However, there's an exception: SimpleMemoComponent
   // sometimes bails out later in the begin phase. This indicates that we should
   // move this assignment out of the common path and into each branch.
+  //  设置workInProgress优先级为NoLanes(最高优先级)
   workInProgress.lanes = NoLanes;
 
+  // 根据workInProgress节点的类型, 用不同的方法派生出子节点
   switch (workInProgress.tag) {
     case IndeterminateComponent: {
       return mountIndeterminateComponent(
