@@ -954,7 +954,7 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
       // 注意fiberRoot.finishedWork 和 fiberRoot.current 指针,在 commitRoot 阶段会进行处理
       root.finishedWork = finishedWork;
       root.finishedLanes = lanes;
-      // 开始执行
+      // 开始执行 commit
       finishConcurrentRender(root, exitStatus, lanes);
     }
   }
@@ -1151,6 +1151,7 @@ function finishConcurrentRender(root, exitStatus, lanes) {
     case RootCompleted: {
       // The work completed. Ready to commit.
       // 工作已经完成 待提交
+      debugger
       commitRoot(
         root,
         workInProgressRootRecoverableErrors,
@@ -1992,6 +1993,7 @@ function commitRoot(
   try {
     ReactCurrentBatchConfig.transition = null;
     setCurrentUpdatePriority(DiscreteEventPriority);
+    // 渲染优先级和调度优先级
     commitRootImpl(
       root,
       recoverableErrors,
@@ -2026,8 +2028,8 @@ function commitRootImpl(
   if ((executionContext & (RenderContext | CommitContext)) !== NoContext) {
     throw new Error('Should not already be working.');
   }
-
-  const finishedWork = root.finishedWork;
+  // 渲染前 准备
+  const finishedWork = root.finishedWork; // 新 fiber 树
   const lanes = root.finishedLanes;
 
   if (__DEV__) {

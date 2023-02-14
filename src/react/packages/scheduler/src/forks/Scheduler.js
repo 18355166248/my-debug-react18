@@ -513,7 +513,6 @@ function forceFrameRate(fps) {
 }
 
 const performWorkUntilDeadline = () => {
-  debugger
   if (scheduledHostCallback !== null) {
     const currentTime = getCurrentTime();
     // Keep track of the start time so we can measure how long the main thread
