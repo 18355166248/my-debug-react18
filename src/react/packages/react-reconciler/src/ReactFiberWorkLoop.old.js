@@ -2064,6 +2064,7 @@ function commitRootImpl(
       }
     }
   }
+  // 清空FiberRoot对象上的属性
   root.finishedWork = null;
   root.finishedLanes = NoLanes;
 
@@ -2173,7 +2174,7 @@ function commitRootImpl(
       // Updates scheduled during ref detachment should also be flagged.
       rootCommittingMutationOrLayoutEffects = root;
     }
-
+    // 阶段2: dom突变, 界面发生改变
     // The next phase is the mutation phase, where we mutate the host tree.
     commitMutationEffects(root, finishedWork, lanes);
 
@@ -2182,12 +2183,14 @@ function commitRootImpl(
         afterActiveInstanceBlur();
       }
     }
+    // 恢复界面状态
     resetAfterCommit(root.containerInfo);
 
     // The work-in-progress tree is now the current tree. This must come after
     // the mutation phase, so that the previous tree is still current during
     // componentWillUnmount, but before the layout phase, so that the finished
     // work is current during componentDidMount/Update.
+    // 切换current指针
     root.current = finishedWork;
 
     // The next phase is the layout phase, where we call effects that read
@@ -2201,6 +2204,7 @@ function commitRootImpl(
     if (enableSchedulingProfiler) {
       markLayoutEffectsStarted(lanes);
     }
+    //  阶段3: layout阶段, 调用生命周期componentDidUpdate和回调函数等
     commitLayoutEffects(finishedWork, root, lanes);
     if (__DEV__) {
       if (enableDebugTracing) {
@@ -2293,6 +2297,7 @@ function commitRootImpl(
 
   // Always call this before exiting `commitRoot`, to ensure that any
   // additional work on this root is scheduled.
+  // 初次渲染/对比更新
   ensureRootIsScheduled(root, now());
 
   if (recoverableErrors !== null) {
