@@ -318,10 +318,12 @@ function safelyCallDestroy(
 let focusedInstanceHandle: null | Fiber = null;
 let shouldFireAfterActiveInstanceBlur: boolean = false;
 
+// 将 div#root 置空
 export function commitBeforeMutationEffects(
   root: FiberRoot,
   firstChild: Fiber,
 ) {
+  // prepareForCommit 在 src/react/packages/react-dom/src/client/ReactDOMHostConfig.js
   focusedInstanceHandle = prepareForCommit(root.containerInfo);
 
   nextEffect = firstChild;
@@ -335,6 +337,7 @@ export function commitBeforeMutationEffects(
   return shouldFire;
 }
 
+// 深度优先遍历完所有的节点  删除子节点 DOM
 function commitBeforeMutationEffects_begin() {
   while (nextEffect !== null) {
     const fiber = nextEffect;
@@ -365,11 +368,13 @@ function commitBeforeMutationEffects_begin() {
   }
 }
 
+// 遍历玩所有的兄弟节点 然后返回根节点
 function commitBeforeMutationEffects_complete() {
   while (nextEffect !== null) {
     const fiber = nextEffect;
     setCurrentDebugFiberInDEV(fiber);
     try {
+        // 删除子节点 DOM
       commitBeforeMutationEffectsOnFiber(fiber);
     } catch (error) {
       captureCommitPhaseError(fiber, fiber.return, error);
@@ -474,6 +479,7 @@ function commitBeforeMutationEffectsOnFiber(finishedWork: Fiber) {
       case HostRoot: {
         if (supportsMutation) {
           const root = finishedWork.stateNode;
+          // 删除子节点 DOM
           clearContainer(root.containerInfo);
         }
         break;
@@ -559,7 +565,9 @@ function commitHookEffectListUnmount(
   }
 }
 
-function commitHookEffectListMount(flags: HookFlags, finishedWork: Fiber) {
+// 执行链式的 hook 回调
+function commitHookEffectListMount (flags: HookFlags, finishedWork: Fiber) {
+  debugger
   const updateQueue: FunctionComponentUpdateQueue | null = (finishedWork.updateQueue: any);
   const lastEffect = updateQueue !== null ? updateQueue.lastEffect : null;
   if (lastEffect !== null) {
@@ -698,7 +706,7 @@ export function commitPassiveEffectDurations(
     }
   }
 }
-
+// 调用生命周期钩子和hook相关操作
 function commitLayoutEffectOnFiber(
   finishedRoot: FiberRoot,
   current: Fiber | null,
@@ -710,6 +718,7 @@ function commitLayoutEffectOnFiber(
       case FunctionComponent:
       case ForwardRef:
       case SimpleMemoComponent: {
+        // 执行 useLayoutEffect hooks
         if (
           !enableSuspenseLayoutEffectSemantics ||
           !offscreenSubtreeWasHidden
@@ -725,6 +734,7 @@ function commitLayoutEffectOnFiber(
           ) {
             try {
               startLayoutEffectTimer();
+              debugger
               commitHookEffectListMount(
                 HookLayout | HookHasEffect,
                 finishedWork,
@@ -888,6 +898,7 @@ function commitLayoutEffectOnFiber(
           // We could update instance props and state here,
           // but instead we rely on them being set during last render.
           // TODO: revisit this when we implement resuming.
+          // 这里执行 serState 的第二个参数也就是回调函数 副作用
           commitUpdateQueue(finishedWork, updateQueue, instance);
         }
         break;
@@ -1022,6 +1033,7 @@ function commitLayoutEffectOnFiber(
     if (enableScopeAPI) {
       // TODO: This is a temporary solution that allowed us to transition away
       // from React Flare on www.
+      // 获取DOM实例，更新ref。
       if (finishedWork.flags & Ref && finishedWork.tag !== ScopeComponent) {
         commitAttachRef(finishedWork);
       }
@@ -1228,7 +1240,7 @@ function hideOrUnhideAllChildren(finishedWork, isHidden) {
     }
   }
 }
-
+// 获取DOM实例，更新ref。
 function commitAttachRef(finishedWork: Fiber) {
   const ref = finishedWork.ref;
   if (ref !== null) {
@@ -1280,7 +1292,7 @@ function commitAttachRef(finishedWork: Fiber) {
           );
         }
       }
-
+      // 获取DOM实例，更新ref。
       ref.current = instanceToUse;
     }
   }
@@ -1501,6 +1513,7 @@ function commitPlacement(finishedWork: Fiber): void {
   }
 
   // Recursively insert all host nodes into the parent.
+  // 找到最顶层的 fiber 根节点
   const parentFiber = getHostParentFiber(finishedWork);
 
   // Note: these two variables *must* always be updated together.
@@ -1522,8 +1535,10 @@ function commitPlacement(finishedWork: Fiber): void {
     }
     case HostRoot:
     case HostPortal: {
+      // 根 Dom 节点
       const parent: Container = parentFiber.stateNode.containerInfo;
       const before = getHostSibling(finishedWork);
+      // 把 FiberNode <App /> 放到 div#root 中
       insertOrAppendPlacementNodeIntoContainer(finishedWork, before, parent);
       break;
     }
@@ -1535,7 +1550,7 @@ function commitPlacement(finishedWork: Fiber): void {
       );
   }
 }
-
+// 把 FiberNode <App /> 放到 div#root 中
 function insertOrAppendPlacementNodeIntoContainer(
   node: Fiber,
   before: ?Instance,
@@ -2033,6 +2048,7 @@ export function isSuspenseBoundaryBeingHidden(
   return false;
 }
 
+// 将 #text 实际写入 DOM 中
 export function commitMutationEffects(
   root: FiberRoot,
   finishedWork: Fiber,
@@ -2149,6 +2165,7 @@ function commitMutationEffectsOnFiber(
       return;
     }
     case ClassComponent: {
+      // 处理需要删除的节点 也就是处理 deletions 的副作用
       recursivelyTraverseMutationEffects(root, finishedWork, lanes);
       commitReconciliationEffects(finishedWork);
 
@@ -2252,7 +2269,9 @@ function commitMutationEffectsOnFiber(
       return;
     }
     case HostRoot: {
+      // 处理需要删除的节点 也就是处理 deletions 的副作用
       recursivelyTraverseMutationEffects(root, finishedWork, lanes);
+      // 渲染 DOM
       commitReconciliationEffects(finishedWork);
 
       if (flags & Update) {
@@ -2434,6 +2453,9 @@ function commitMutationEffectsOnFiber(
     }
   }
 }
+
+// 根据effectTag分别处理，其中effectTag包括(Placement ，Update ， Deletion ， Hydrating等等)
+// 我们关注步骤三中的 Placement | Update | Deletion Hydrating作为服务端渲染相关，我们先不关注
 function commitReconciliationEffects(finishedWork: Fiber) {
   // Placement effects (insertions, reorders) can be scheduled on any fiber
   // type. They needs to happen after the children effects have fired, but
@@ -2441,6 +2463,7 @@ function commitReconciliationEffects(finishedWork: Fiber) {
   const flags = finishedWork.flags;
   if (flags & Placement) {
     try {
+      // 当Fiber节点含有Placement effectTag，意味着该Fiber节点对应的DOM节点需要插入到页面中。
       commitPlacement(finishedWork);
     } catch (error) {
       captureCommitPhaseError(finishedWork, finishedWork.return, error);
@@ -2461,6 +2484,7 @@ export function commitLayoutEffects(
   root: FiberRoot,
   committedLanes: Lanes,
 ): void {
+  // root.current 等于 finishedWork
   inProgressLanes = committedLanes;
   inProgressRoot = root;
   nextEffect = finishedWork;
@@ -2546,8 +2570,8 @@ function commitLayoutEffects_begin(
 }
 
 function commitLayoutMountEffects_complete(
-  subtreeRoot: Fiber,
-  root: FiberRoot,
+  subtreeRoot: Fiber, // fiberRoot.current
+  root: FiberRoot, // fiberRoot
   committedLanes: Lanes,
 ) {
   while (nextEffect !== null) {
@@ -2556,6 +2580,7 @@ function commitLayoutMountEffects_complete(
       const current = fiber.alternate;
       setCurrentDebugFiberInDEV(fiber);
       try {
+        // 调用生命周期钩子和hook相关操作
         commitLayoutEffectOnFiber(root, current, fiber, committedLanes);
       } catch (error) {
         captureCommitPhaseError(fiber, fiber.return, error);
@@ -2813,6 +2838,7 @@ function commitPassiveMountOnFiber(
         enableProfilerCommitHooks &&
         finishedWork.mode & ProfileMode
       ) {
+        debugger
         startPassiveEffectTimer();
         try {
           commitHookEffectListMount(HookPassive | HookHasEffect, finishedWork);

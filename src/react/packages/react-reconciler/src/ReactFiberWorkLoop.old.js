@@ -1151,7 +1151,6 @@ function finishConcurrentRender(root, exitStatus, lanes) {
     case RootCompleted: {
       // The work completed. Ready to commit.
       // 工作已经完成 待提交
-      debugger
       commitRoot(
         root,
         workInProgressRootRecoverableErrors,
@@ -2039,6 +2038,7 @@ function commitRootImpl(
   }
 
   if (enableSchedulingProfiler) {
+    // 标记渲染开始
     markCommitStarted(lanes);
   }
 
@@ -2116,6 +2116,7 @@ function commitRootImpl(
       // with setTimeout
       pendingPassiveTransitions = transitions;
       scheduleCallback(NormalSchedulerPriority, () => {
+        // 执行上一次的销毁生命周期 并异步执行有回调的useEffect
         flushPassiveEffects();
         // This render triggered passive effects: release the root cache pool
         // *after* passive effects fire to avoid freeing a cache pool that may
@@ -2158,6 +2159,7 @@ function commitRootImpl(
     // The first phase a "before mutation" phase. We use this phase to read the
     // state of the host tree right before we mutate it. This is where
     // getSnapshotBeforeUpdate is called.
+    // 将 div#root 置空
     const shouldFireAfterActiveInstanceBlur = commitBeforeMutationEffects(
       root,
       finishedWork,
@@ -2166,6 +2168,7 @@ function commitRootImpl(
     if (enableProfilerTimer) {
       // Mark the current commit time to be shared by all Profilers in this
       // batch. This enables them to be grouped later.
+      // 重置 commitTime 时间为当前时间 performance.now()
       recordCommitTime();
     }
 
@@ -2183,7 +2186,7 @@ function commitRootImpl(
         afterActiveInstanceBlur();
       }
     }
-    // 恢复界面状态
+    // 恢复界面状态 root.containerInfo 根节点 Dom
     resetAfterCommit(root.containerInfo);
 
     // The work-in-progress tree is now the current tree. This must come after
@@ -2191,6 +2194,8 @@ function commitRootImpl(
     // componentWillUnmount, but before the layout phase, so that the finished
     // work is current during componentDidMount/Update.
     // 切换current指针
+    // 值得注意的是，commit 阶段 第三步 commitLayoutEffects 之前，
+    // React 会将 FiberRootNode 的 current 属性指向创建好了 Fiber Tree。
     root.current = finishedWork;
 
     // The next phase is the layout phase, where we call effects that read
@@ -2204,7 +2209,7 @@ function commitRootImpl(
     if (enableSchedulingProfiler) {
       markLayoutEffectsStarted(lanes);
     }
-    //  阶段3: layout阶段, 调用生命周期componentDidUpdate和回调函数等
+    //  阶段3: layout阶段, 调用生命周期 componentDidUpdate 和回调函数等
     commitLayoutEffects(finishedWork, root, lanes);
     if (__DEV__) {
       if (enableDebugTracing) {
@@ -2363,6 +2368,7 @@ function commitRootImpl(
   }
 
   if (enableSchedulingProfiler) {
+    // 标记commit阶段结束
     markCommitStopped();
   }
 
@@ -2409,7 +2415,7 @@ export function flushPassiveEffects(): boolean {
     try {
       ReactCurrentBatchConfig.transition = null;
       setCurrentUpdatePriority(priority);
-      return flushPassiveEffectsImpl();
+      return flushPassiveEffectsImpl(); // 执行异步
     } finally {
       setCurrentUpdatePriority(previousPriority);
       ReactCurrentBatchConfig.transition = prevTransition;
@@ -2473,7 +2479,7 @@ function flushPassiveEffectsImpl() {
   const prevExecutionContext = executionContext;
   executionContext |= CommitContext;
 
-  commitPassiveUnmountEffects(root.current);
+  commitPassiveUnmountEffects(root.current); // 执行上一次的销毁生命周期
   commitPassiveMountEffects(root, root.current, lanes, transitions);
 
   // TODO: Move to commitPassiveMountEffects
