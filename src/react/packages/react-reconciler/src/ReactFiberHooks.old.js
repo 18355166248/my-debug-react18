@@ -378,8 +378,9 @@ export function renderWithHooks<Props, SecondArg>(
   secondArg: SecondArg,
   nextRenderLanes: Lanes,
 ): any {
-  renderLanes = nextRenderLanes;
-  currentlyRenderingFiber = workInProgress;
+  // --------------- 1. 设置全局变量 -------------------
+  renderLanes = nextRenderLanes; // 当前渲染优先级
+  currentlyRenderingFiber = workInProgress; // 当前fiber节点, 也就是function组件对应的fiber节点
 
   if (__DEV__) {
     hookTypesDev =
@@ -391,7 +392,7 @@ export function renderWithHooks<Props, SecondArg>(
     ignorePreviousDependencies =
       current !== null && current.type !== workInProgress.type;
   }
-
+  // 清除当前fiber的遗留状态
   workInProgress.memoizedState = null;
   workInProgress.updateQueue = null;
   workInProgress.lanes = NoLanes;
@@ -425,12 +426,14 @@ export function renderWithHooks<Props, SecondArg>(
       ReactCurrentDispatcher.current = HooksDispatcherOnMountInDEV;
     }
   } else {
+    // --------------- 2. 调用function,生成子级 ReactElement 对象 -------------------
+    // 指定 dispatcher, 区分 mount 和 update
     ReactCurrentDispatcher.current =
       current === null || current.memoizedState === null
         ? HooksDispatcherOnMount
         : HooksDispatcherOnUpdate;
   }
-
+  // 执行 function 函数, 其中进行分析 Hooks 的使用
   let children = Component(props, secondArg);
 
   // Check if there was a render phase update
@@ -487,7 +490,8 @@ export function renderWithHooks<Props, SecondArg>(
   // hookTypesDev could catch more cases (e.g. context) but only in DEV bundles.
   const didRenderTooFewHooks =
     currentHook !== null && currentHook.next !== null;
-
+  // --------------- 3. 重置全局变量,并返回 -------------------
+  // 执行function之后, 还原被修改的全局变量, 不影响下一次调用
   renderLanes = NoLanes;
   currentlyRenderingFiber = (null: any);
 

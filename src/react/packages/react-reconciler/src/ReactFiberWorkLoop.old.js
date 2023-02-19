@@ -702,7 +702,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     root,
     root === workInProgressRoot ? workInProgressRootRenderLanes : NoLanes,
   );
-
+  // 节流防抖
   if (nextLanes === NoLanes) {
     // Special case: There's nothing to work on.
     // 没有需要工作的
@@ -718,6 +718,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
   const newCallbackPriority = getHighestPriorityLane(nextLanes);
 
   // Check if there's an existing task. We may be able to reuse it.
+  // 防抖
   const existingCallbackPriority = root.callbackPriority;
   if (
     existingCallbackPriority === newCallbackPriority &&
@@ -819,7 +820,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
       performConcurrentWorkOnRoot.bind(null, root), // 执行初次渲染
     );
   }
-
+  // 更新标记
   root.callbackPriority = newCallbackPriority;
   root.callbackNode = newCallbackNode;
 }
