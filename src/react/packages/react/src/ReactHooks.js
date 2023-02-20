@@ -76,7 +76,7 @@ export function useContext<T>(Context: ReactContext<T>): T {
   }
   return dispatcher.useContext(Context);
 }
-
+// 初始化 hook 是在 src/react/packages/react-reconciler/src/ReactFiberHooks.old.js ReactCurrentDispatcher.current = 
 export function useState<S>(
   initialState: (() => S) | S,
 ): [S, Dispatch<BasicStateAction<S>>] {

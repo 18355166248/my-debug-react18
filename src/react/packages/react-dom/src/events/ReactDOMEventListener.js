@@ -118,13 +118,12 @@ function dispatchDiscreteEvent(
   container,
   nativeEvent, // 原生事件
 ) {
-  console.log('nativeEvent', nativeEvent)
   const previousPriority = getCurrentUpdatePriority();
   const prevTransition = ReactCurrentBatchConfig.transition;
   ReactCurrentBatchConfig.transition = null;
   try {
     setCurrentUpdatePriority(DiscreteEventPriority);
-    console.log(eventSystemFlags === 0 ? '冒泡' : '捕获', domEventName,container)
+
     dispatchEvent(domEventName, eventSystemFlags, container, nativeEvent);
   } finally {
     setCurrentUpdatePriority(previousPriority);

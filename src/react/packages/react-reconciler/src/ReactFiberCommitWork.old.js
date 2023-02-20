@@ -567,7 +567,6 @@ function commitHookEffectListUnmount(
 
 // 执行链式的 hook 回调
 function commitHookEffectListMount (flags: HookFlags, finishedWork: Fiber) {
-  debugger
   const updateQueue: FunctionComponentUpdateQueue | null = (finishedWork.updateQueue: any);
   const lastEffect = updateQueue !== null ? updateQueue.lastEffect : null;
   if (lastEffect !== null) {
@@ -734,7 +733,6 @@ function commitLayoutEffectOnFiber(
           ) {
             try {
               startLayoutEffectTimer();
-              debugger
               commitHookEffectListMount(
                 HookLayout | HookHasEffect,
                 finishedWork,
@@ -2838,7 +2836,6 @@ function commitPassiveMountOnFiber(
         enableProfilerCommitHooks &&
         finishedWork.mode & ProfileMode
       ) {
-        debugger
         startPassiveEffectTimer();
         try {
           commitHookEffectListMount(HookPassive | HookHasEffect, finishedWork);

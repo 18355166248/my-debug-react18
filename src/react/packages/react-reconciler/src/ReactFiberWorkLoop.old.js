@@ -526,7 +526,7 @@ function requestRetryLane(fiber: Fiber) {
 
   return claimNextRetryLane();
 }
-
+// 输入
 export function scheduleUpdateOnFiber(
   root: FiberRoot, // 根节点 filber
   fiber: Fiber, // 需要更新的节点

@@ -783,6 +783,7 @@ function updateReducer<S, I, A>(
   let baseQueue = current.baseQueue;
 
   // The last pending update that hasn't been processed yet.
+  // 链表拼接: 将 hook.queue.pending 拼接到 current.baseQueue
   const pendingQueue = queue.pending;
   if (pendingQueue !== null) {
     // We have new updates that haven't been processed yet.
@@ -807,7 +808,7 @@ function updateReducer<S, I, A>(
     current.baseQueue = baseQueue = pendingQueue;
     queue.pending = null;
   }
-
+  // 3. 状态计算
   if (baseQueue !== null) {
     // We have a queue to process.
     const first = baseQueue.next;
@@ -819,7 +820,10 @@ function updateReducer<S, I, A>(
     let update = first;
     do {
       const updateLane = update.lane;
+      // 3.1 优先级提取update
+      debugger
       if (!isSubsetOfLanes(renderLanes, updateLane)) {
+        // 优先级不够: 加入到 baseQueue 中, 等待下一次render
         // Priority is insufficient. Skip this update. If this is the first
         // skipped update, the previous update/state is the new base
         // update/state.
@@ -846,7 +850,7 @@ function updateReducer<S, I, A>(
         markSkippedUpdateLanes(updateLane);
       } else {
         // This update does have sufficient priority.
-
+        // 优先级足够: 状态合并
         if (newBaseQueueLast !== null) {
           const clone: Update<S, A> = {
             // This update is going to be committed so we never want uncommit
@@ -865,15 +869,17 @@ function updateReducer<S, I, A>(
         if (update.hasEagerState) {
           // If this update is a state update (not a reducer) and was processed eagerly,
           // we can use the eagerly computed state
+          // 性能优化: 如果存在 update.eagerReducer, 直接使用update.eagerState.避免重复调用reducer
           newState = ((update.eagerState: any): S);
         } else {
+          // 调用 reducer 获取最新状态
           const action = update.action;
           newState = reducer(newState, action);
         }
       }
       update = update.next;
     } while (update !== null && update !== first);
-
+    // 3.2. 更新属性
     if (newBaseQueueLast === null) {
       newBaseState = newState;
     } else {
@@ -885,7 +891,7 @@ function updateReducer<S, I, A>(
     if (!is(newState, hook.memoizedState)) {
       markWorkInProgressReceivedUpdate();
     }
-
+    // 把计算之后的结果更新到workInProgressHook上
     hook.memoizedState = newState;
     hook.baseState = newBaseState;
     hook.baseQueue = newBaseQueueLast;
@@ -1514,6 +1520,7 @@ function forceStoreRerender(fiber) {
 function mountState<S>(
   initialState: (() => S) | S,
 ): [S, Dispatch<BasicStateAction<S>>] {
+  // 1. 创建hook
   const hook = mountWorkInProgressHook();
   if (typeof initialState === 'function') {
     // $FlowFixMe: Flow doesn't like mixed types
@@ -1525,6 +1532,7 @@ function mountState<S>(
     interleaved: null,
     lanes: NoLanes,
     dispatch: null,
+    // 唯一的不同点是hook.queue.lastRenderedReducer 这里使用的是内置的   mountReducer使用的是外部传入自定义reducer
     lastRenderedReducer: basicStateReducer,
     lastRenderedState: (initialState: any),
   };
@@ -1671,7 +1679,7 @@ function updateRef<T>(initialValue: T): {|current: T|} {
 }
 
 function mountEffectImpl(fiberFlags, hookFlags, create, deps): void {
-  const hook = mountWorkInProgressHook();
+  const hook = mountWorkInProgressHook(); // 创建 hook
   const nextDeps = deps === undefined ? null : deps;
   currentlyRenderingFiber.flags |= fiberFlags;
   hook.memoizedState = pushEffect(
@@ -2260,6 +2268,8 @@ function dispatchSetState<S, A>(
     next: (null: any),
   };
   if (isRenderPhaseUpdate(fiber)) {
+    // fiber 是在 render 阶段  渲染阶段更新
+    // 将 update 插入到 queue 中
     enqueueRenderPhaseUpdate(queue, update);
   } else {
     const alternate = fiber.alternate;
@@ -2280,6 +2290,7 @@ function dispatchSetState<S, A>(
         try {
           const currentState: S = (queue.lastRenderedState: any);
           const eagerState = lastRenderedReducer(currentState, action);
+          // 暂存 `eagerReducer` 和`eagerState`, 如果在render阶段reducer==update.eagerReducer, 则可以直接使用无需再次计算
           // Stash the eagerly computed state, and the reducer used to compute
           // it, on the update object. If the reducer hasn't changed by the
           // time we enter the render phase, then the eager state can be used
@@ -2287,6 +2298,8 @@ function dispatchSetState<S, A>(
           update.hasEagerState = true;
           update.eagerState = eagerState;
           if (is(eagerState, currentState)) {
+            // 快速通道, eagerState与currentState相同, 无需调度更新
+            // 注: update已经被添加到了queue.pending, 并没有丢弃. 之后需要更新的时候, 此update还是会起作用
             // Fast path. We can bail out without scheduling React to re-render.
             // It's still possible that we'll need to rebase this update later,
             // if the component re-renders for a different reason and by that
@@ -2315,6 +2328,7 @@ function dispatchSetState<S, A>(
     const root = enqueueConcurrentHookUpdate(fiber, queue, update, lane);
     if (root !== null) {
       const eventTime = requestEventTime();
+      // 发起调度更新, 进入`reconciler 运作流程`中的输入阶段
       scheduleUpdateOnFiber(root, fiber, lane, eventTime);
       entangleTransitionUpdate(root, queue, lane);
     }
