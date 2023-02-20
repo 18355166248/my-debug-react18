@@ -821,7 +821,6 @@ function updateReducer<S, I, A>(
     do {
       const updateLane = update.lane;
       // 3.1 优先级提取update
-      debugger
       if (!isSubsetOfLanes(renderLanes, updateLane)) {
         // 优先级不够: 加入到 baseQueue 中, 等待下一次render
         // Priority is insufficient. Skip this update. If this is the first
@@ -1559,12 +1558,15 @@ function rerenderState<S>(
   return rerenderReducer(basicStateReducer, (initialState: any));
 }
 
+// 创建effect.
+// 把effect对象添加到环形链表末尾.
+// 返回effect.
 function pushEffect(tag, create, destroy, deps) {
   const effect: Effect = {
     tag,
-    create,
+    create, // effect 第一个参数函数
     destroy,
-    deps,
+    deps, // effect 第二个参数数组
     // Circular
     next: (null: any),
   };
@@ -1578,6 +1580,7 @@ function pushEffect(tag, create, destroy, deps) {
     if (lastEffect === null) {
       componentUpdateQueue.lastEffect = effect.next = effect;
     } else {
+      // 设置 currentlyRenderingFiber.updateQueue.lastEffect 为 effect
       const firstEffect = lastEffect.next;
       lastEffect.next = effect;
       effect.next = firstEffect;
@@ -1681,9 +1684,11 @@ function updateRef<T>(initialValue: T): {|current: T|} {
 function mountEffectImpl(fiberFlags, hookFlags, create, deps): void {
   const hook = mountWorkInProgressHook(); // 创建 hook
   const nextDeps = deps === undefined ? null : deps;
-  currentlyRenderingFiber.flags |= fiberFlags;
+  // 2. 设置workInProgress的副作用标记
+  currentlyRenderingFiber.flags |= fiberFlags;  // fiberFlags 被标记到workInProgress
+  // 3. 创建Effect, 挂载到hook.memoizedState上
   hook.memoizedState = pushEffect(
-    HookHasEffect | hookFlags,
+    HookHasEffect | hookFlags, // hookFlags用于创建effect
     create,
     undefined,
     nextDeps,
