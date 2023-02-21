@@ -342,12 +342,16 @@ function ChildReconciler(shouldTrackSideEffects) {
     const current = newFiber.alternate;
     if (current !== null) {
       const oldIndex = current.index;
+      // 老节点的索引 < 最后更新的索引
       if (oldIndex < lastPlacedIndex) {
         // This is a move.
+        // 标记新节点的flags 需要更新
         newFiber.flags |= Placement;
+        // 保持不变
         return lastPlacedIndex;
       } else {
         // This item can stay in place.
+        // 老节点在最近更新的索引后面  直接返回老节点
         return oldIndex;
       }
     } else {
@@ -733,7 +737,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     }
     return knownKeys;
   }
-
+  // 多节点是数组的情况下
   function reconcileChildrenArray(
     returnFiber: Fiber,
     currentFirstChild: Fiber | null,
@@ -775,6 +779,7 @@ function ChildReconciler(shouldTrackSideEffects) {
     let lastPlacedIndex = 0;
     let newIdx = 0;
     let nextOldFiber = null;
+
     for (; oldFiber !== null && newIdx < newChildren.length; newIdx++) {
       if (oldFiber.index > newIdx) {
         nextOldFiber = oldFiber;
@@ -782,6 +787,7 @@ function ChildReconciler(shouldTrackSideEffects) {
       } else {
         nextOldFiber = oldFiber.sibling;
       }
+      // key不同导致不可复用 立即跳出变遍历 第一轮遍历结束
       const newFiber = updateSlot(
         returnFiber,
         oldFiber,
@@ -819,8 +825,9 @@ function ChildReconciler(shouldTrackSideEffects) {
       previousNewFiber = newFiber;
       oldFiber = nextOldFiber;
     }
-
+    // 如果newChildren遍历完，oldFiber没遍历完，意味着有节点被删除了，需要遍历剩下的oldFiber，依次标记Deletion。
     if (newIdx === newChildren.length) {
+      // 如果遍历结束 删除 oldFiber 的所有兄弟节点 并返回
       // We've reached the end of the new children. We can delete the rest.
       deleteRemainingChildren(returnFiber, oldFiber);
       if (getIsHydrating()) {
@@ -829,10 +836,12 @@ function ChildReconciler(shouldTrackSideEffects) {
       }
       return resultingFirstChild;
     }
-
+    // 如果 oldFiber 没有可以复用值了
+    // 如果 newChildren没遍历完，oldFiber遍历完，意味着没有可以复用的节点了，遍历剩下的newChildren为生成的workInProgress fiber依次标记Placement。
     if (oldFiber === null) {
       // If we don't have any more existing children we can choose a fast path
       // since the rest will all be insertions.
+      // 遍历 newChildren 生产新的节点 循环结束 返回最后一个fiber节点
       for (; newIdx < newChildren.length; newIdx++) {
         const newFiber = createChild(returnFiber, newChildren[newIdx], lanes);
         if (newFiber === null) {
@@ -855,10 +864,16 @@ function ChildReconciler(shouldTrackSideEffects) {
     }
 
     // Add all children to a key map for quick lookups.
+    // 如果newChildren与oldFiber都没遍历完
+    // 先去用 oldFiber 声明map数据结构
+    // debugger
     const existingChildren = mapRemainingChildren(returnFiber, oldFiber);
 
+    console.log('existingChildren',existingChildren)
     // Keep scanning and use the map to restore deleted items as moves.
+    // 继续遍历新的 jsx
     for (; newIdx < newChildren.length; newIdx++) {
+      // 如果 existingChildren 存在, 会直接复用生成一个新的 fiber
       const newFiber = updateFromMap(
         existingChildren,
         returnFiber,
@@ -873,11 +888,13 @@ function ChildReconciler(shouldTrackSideEffects) {
             // current, that means that we reused the fiber. We need to delete
             // it from the child list so that we don't add it to the deletion
             // list.
+            // 会把 key 从 map中删除 说明可以复用
             existingChildren.delete(
               newFiber.key === null ? newIdx : newFiber.key,
             );
           }
         }
+        // lastPlaceIndex指针，指向最后一个不需要动的老节点的key。每次新jsx复用到节点，lastPlaceIndex会指向老节点的最后一个成功复用的老fiber节点。如果新复用的节点key小于lastPlaceIndex，说明老fiber节点的顺序在新jsx之前，需要挪动位置接到新jsx节点后面。
         lastPlacedIndex = placeChild(newFiber, lastPlacedIndex, newIdx);
         if (previousNewFiber === null) {
           resultingFirstChild = newFiber;
@@ -887,10 +904,13 @@ function ChildReconciler(shouldTrackSideEffects) {
         previousNewFiber = newFiber;
       }
     }
+    // newFiber 的数据全部绑定在 pendingProps上 老数据是在 memoizedProps
 
     if (shouldTrackSideEffects) {
       // Any existing children that weren't consumed above were deleted. We need
       // to add them to the deletion list.
+      // 如果这个时候 existingChildren 还有没有复用的节点 那就表示是需要删除的节点
+      // 用 deleteChild 给父节点设置 deletions 和 flags 表示有需要删除的节点
       existingChildren.forEach(child => deleteChild(returnFiber, child));
     }
 
