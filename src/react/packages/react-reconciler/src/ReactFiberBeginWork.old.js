@@ -3204,7 +3204,7 @@ function updateContextProvider(
 
   const newProps = workInProgress.pendingProps;
   const oldProps = workInProgress.memoizedProps;
-
+  // 接收新 value
   const newValue = newProps.value;
 
   if (__DEV__) {
@@ -3231,10 +3231,12 @@ function updateContextProvider(
     // we're going to visit those nodes, anyway. The trade-off is that it shifts
     // responsibility to the consumer to track whether something has changed.
   } else {
+    // 更新逻辑
     if (oldProps !== null) {
       const oldValue = oldProps.value;
       if (is(oldValue, newValue)) {
         // No change. Bailout early if children are the same.
+        // value没有变动, 进入 Bailout 逻辑
         if (
           oldProps.children === newProps.children &&
           !hasLegacyContextChanged()
@@ -3248,6 +3250,7 @@ function updateContextProvider(
       } else {
         // The context value changed. Search for matching consumers and schedule
         // them to update.
+        // value变动, 查找对应的consumers, 并使其能够被更新
         propagateContextChange(workInProgress, context, renderLanes);
       }
     }
@@ -3304,8 +3307,9 @@ function updateContextConsumer(
       );
     }
   }
-
+  // 读取 context
   prepareToReadContext(workInProgress, renderLanes);
+  // 获取最新的 context 下的value
   const newValue = readContext(context);
   if (enableSchedulingProfiler) {
     markComponentRenderStarted(workInProgress);
@@ -3317,6 +3321,7 @@ function updateContextConsumer(
     newChildren = render(newValue);
     setIsRendering(false);
   } else {
+    // 执行渲染
     newChildren = render(newValue);
   }
   if (enableSchedulingProfiler) {

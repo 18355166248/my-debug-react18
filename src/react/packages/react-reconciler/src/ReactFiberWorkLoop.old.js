@@ -2116,8 +2116,9 @@ function commitRootImpl(
       // the previous render and commit if we throttle the commit
       // with setTimeout
       pendingPassiveTransitions = transitions;
+      // 创建一个 task
       scheduleCallback(NormalSchedulerPriority, () => {
-        // 执行上一次的销毁生命周期 并异步执行有回调的useEffect
+        // 执行上一次的销毁生命周期 并异步执行有回调的 useEffect
         flushPassiveEffects();
         // This render triggered passive effects: release the root cache pool
         // *after* passive effects fire to avoid freeing a cache pool that may
@@ -2211,6 +2212,7 @@ function commitRootImpl(
       markLayoutEffectsStarted(lanes);
     }
     //  阶段3: layout阶段, 调用生命周期 componentDidUpdate 和回调函数等
+    // 执行 useLayoutEffect 回调函数
     commitLayoutEffects(finishedWork, root, lanes);
     if (__DEV__) {
       if (enableDebugTracing) {
@@ -2481,7 +2483,7 @@ function flushPassiveEffectsImpl() {
   executionContext |= CommitContext;
 
   commitPassiveUnmountEffects(root.current); // 执行上一次的销毁生命周期
-  commitPassiveMountEffects(root, root.current, lanes, transitions);
+  commitPassiveMountEffects(root, root.current, lanes, transitions); // 执行 effect 回调函数
 
   // TODO: Move to commitPassiveMountEffects
   if (enableProfilerTimer && enableProfilerCommitHooks) {
@@ -3121,6 +3123,7 @@ function scheduleCallback(priorityLevel, callback) {
       actQueue.push(callback);
       return fakeActCallbackNode;
     } else {
+      // src/react/packages/scheduler/src/forks/Scheduler.js 下的 unstable_scheduleCallback
       return Scheduler_scheduleCallback(priorityLevel, callback);
     }
   } else {

@@ -352,7 +352,6 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
       timeout = NORMAL_PRIORITY_TIMEOUT;
       break;
   }
-
   var expirationTime = startTime + timeout;
   // 3. 创建新任务
   var newTask = {

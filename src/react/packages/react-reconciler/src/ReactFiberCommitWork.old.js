@@ -374,7 +374,7 @@ function commitBeforeMutationEffects_complete() {
     const fiber = nextEffect;
     setCurrentDebugFiberInDEV(fiber);
     try {
-        // 删除子节点 DOM
+      // 删除子节点 DOM
       commitBeforeMutationEffectsOnFiber(fiber);
     } catch (error) {
       captureCommitPhaseError(fiber, fiber.return, error);
@@ -573,6 +573,7 @@ function commitHookEffectListMount (flags: HookFlags, finishedWork: Fiber) {
     const firstEffect = lastEffect.next;
     let effect = firstEffect;
     do {
+      // flags 如果参数是 HookLayout | HookHasEffect, 只处理由useLayoutEffect()创建的effect
       if ((effect.tag & flags) === flags) {
         if (enableSchedulingProfiler) {
           if ((flags & HookPassive) !== NoHookEffect) {
@@ -2115,6 +2116,8 @@ function commitMutationEffectsOnFiber(
 
       if (flags & Update) {
         try {
+           // 在突变阶段调用销毁函数, 保证所有的effect.destroy函数都会在effect.create之前执行
+          debugger
           commitHookEffectListUnmount(
             HookInsertion | HookHasEffect,
             finishedWork,
@@ -2742,7 +2745,7 @@ function reappearLayoutEffects_complete(subtreeRoot: Fiber) {
     nextEffect = fiber.return;
   }
 }
-
+// 执行 effect 回调函数
 export function commitPassiveMountEffects(
   root: FiberRoot,
   finishedWork: Fiber,
@@ -3017,7 +3020,7 @@ export function commitPassiveUnmountEffects(firstChild: Fiber): void {
   commitPassiveUnmountEffects_begin();
 }
 
-function commitPassiveUnmountEffects_begin() {
+function commitPassiveUnmountEffects_begin () {
   while (nextEffect !== null) {
     const fiber = nextEffect;
     const child = fiber.child;
