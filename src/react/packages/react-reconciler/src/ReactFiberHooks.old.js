@@ -650,7 +650,6 @@ function mountWorkInProgressHook(): Hook {
 
     next: null,
   };
-
   if (workInProgressHook === null) {
     // This is the first hook in the list
     currentlyRenderingFiber.memoizedState = workInProgressHook = hook;
@@ -661,7 +660,7 @@ function mountWorkInProgressHook(): Hook {
   return workInProgressHook;
 }
 
-function updateWorkInProgressHook(): Hook {
+function updateWorkInProgressHook (): Hook {
   // This function is used both for updates and for re-renders triggered by a
   // render phase update. It assumes there is either a current hook we can
   // clone, or a work-in-progress hook from a previous render pass that we can
@@ -669,6 +668,7 @@ function updateWorkInProgressHook(): Hook {
   // the dispatcher used for mounts.
   let nextCurrentHook: null | Hook;
   if (currentHook === null) {
+    // 这里的 currentlyRenderingFiber 是在 renderWithHooks 赋值的 也就是在执行函数组件之前
     const current = currentlyRenderingFiber.alternate;
     if (current !== null) {
       nextCurrentHook = current.memoizedState;
@@ -771,7 +771,6 @@ function updateReducer<S, I, A>(
 ): [S, Dispatch<A>] {
   const hook = updateWorkInProgressHook();
   const queue = hook.queue;
-
   if (queue === null) {
     throw new Error(
       'Should have a queue. This is likely a bug in React. Please file an issue.',
@@ -809,7 +808,7 @@ function updateReducer<S, I, A>(
       }
     }
     current.baseQueue = baseQueue = pendingQueue;
-    queue.pending = null;
+    queue.pending = null; // 设置 pending 为 null
   }
   // 3. 状态计算
   if (baseQueue !== null) {
@@ -893,7 +892,7 @@ function updateReducer<S, I, A>(
     if (!is(newState, hook.memoizedState)) {
       markWorkInProgressReceivedUpdate();
     }
-    // 把计算之后的结果更新到workInProgressHook上
+    // 把计算之后的结果更新到 workInProgressHook 上
     hook.memoizedState = newState;
     hook.baseState = newBaseState;
     hook.baseQueue = newBaseQueueLast;
@@ -1689,7 +1688,7 @@ function mountEffectImpl(fiberFlags, hookFlags, create, deps): void {
   const nextDeps = deps === undefined ? null : deps;
   // 2. 设置workInProgress的副作用标记
   currentlyRenderingFiber.flags |= fiberFlags;  // fiberFlags 被标记到workInProgress
-  // 3. 创建Effect, 挂载到hook.memoizedState上
+  // 3. 创建Effect, 挂载到 hook.memoizedState 上
   hook.memoizedState = pushEffect(
     HookHasEffect | hookFlags, // hookFlags用于创建effect
     create,
@@ -1708,7 +1707,9 @@ function updateEffectImpl(fiberFlags, hookFlags, create, deps): void {
     destroy = prevEffect.destroy;
     if (nextDeps !== null) {
       const prevDeps = prevEffect.deps;
+      // 比较依赖是否变化
       if (areHookInputsEqual(nextDeps, prevDeps)) {
+         // 2.1 如果依赖不变, 新建effect(tag不含HookHasEffect)
         hook.memoizedState = pushEffect(hookFlags, create, destroy, nextDeps);
         return;
       }
@@ -1716,7 +1717,7 @@ function updateEffectImpl(fiberFlags, hookFlags, create, deps): void {
   }
 
   currentlyRenderingFiber.flags |= fiberFlags;
-
+  // 2.2 如果依赖改变, 更改fiber.flag, 新建effect
   hook.memoizedState = pushEffect(
     HookHasEffect | hookFlags,
     create,
@@ -2275,6 +2276,7 @@ function dispatchSetState<S, A>(
     eagerState: null,
     next: (null: any),
   };
+
   if (isRenderPhaseUpdate(fiber)) {
     // fiber 是在 render 阶段  渲染阶段更新
     // 将 update 插入到 queue 中
@@ -2288,6 +2290,7 @@ function dispatchSetState<S, A>(
       // The queue is currently empty, which means we can eagerly compute the
       // next state before entering the render phase. If the new state is the
       // same as the current state, we may be able to bail out entirely.
+      // 这里的 lastRenderedReducer 就是 basicStateReducer
       const lastRenderedReducer = queue.lastRenderedReducer;
       if (lastRenderedReducer !== null) {
         let prevDispatcher;
@@ -2297,6 +2300,7 @@ function dispatchSetState<S, A>(
         }
         try {
           const currentState: S = (queue.lastRenderedState: any);
+          // eagerState 是执行 useState 第二个参数后的结果
           const eagerState = lastRenderedReducer(currentState, action);
           // 暂存 `eagerReducer` 和`eagerState`, 如果在render阶段reducer==update.eagerReducer, 则可以直接使用无需再次计算
           // Stash the eagerly computed state, and the reducer used to compute

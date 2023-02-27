@@ -574,6 +574,7 @@ function commitHookEffectListMount (flags: HookFlags, finishedWork: Fiber) {
     let effect = firstEffect;
     do {
       // flags 如果参数是 HookLayout | HookHasEffect, 只处理由useLayoutEffect()创建的effect
+      // AB 当中包含 B: AB & B === B
       if ((effect.tag & flags) === flags) {
         if (enableSchedulingProfiler) {
           if ((flags & HookPassive) !== NoHookEffect) {
