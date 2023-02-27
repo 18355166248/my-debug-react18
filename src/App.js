@@ -4,12 +4,10 @@ function App() {
   const [count, setCount] = useState(0);
 
   useLayoutEffect(() => {
-    debugger;
     console.log("useLayoutEffect");
   }, []);
 
   useEffect(() => {
-    debugger;
     console.log(22);
   }, []);
 

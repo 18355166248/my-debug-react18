@@ -426,8 +426,8 @@ export function renderWithHooks<Props, SecondArg>(
       ReactCurrentDispatcher.current = HooksDispatcherOnMountInDEV;
     }
   } else {
-    // --------------- 2. 调用function,生成子级 ReactElement 对象 -------------------
-    // 指定 dispatcher, 区分 mount 和 update
+    // 2. 调用function,生成子级 ReactElement 对象
+    // 指定 dispatcher, 区分 mount 和 update 初次执行还是更新执行
     ReactCurrentDispatcher.current =
       current === null || current.memoizedState === null
         ? HooksDispatcherOnMount
@@ -437,11 +437,14 @@ export function renderWithHooks<Props, SecondArg>(
   let children = Component(props, secondArg);
 
   // Check if there was a render phase update
+  // 当有更新要渲染时
   if (didScheduleRenderPhaseUpdateDuringThisPass) {
     // Keep rendering in a loop for as long as render phase updates continue to
     // be scheduled. Use a counter to prevent infinite loops.
     let numberOfReRenders: number = 0;
     do {
+      // 第一步就是置为 false
+      // 这个循环只执行一次
       didScheduleRenderPhaseUpdateDuringThisPass = false;
       localIdCounter = 0;
 
@@ -451,7 +454,7 @@ export function renderWithHooks<Props, SecondArg>(
             'an infinite loop.',
         );
       }
-
+      // 记录循环次数，避免无限循环
       numberOfReRenders += 1;
       if (__DEV__) {
         // Even when hot reloading, allow dependencies to stabilize
@@ -473,7 +476,7 @@ export function renderWithHooks<Props, SecondArg>(
       ReactCurrentDispatcher.current = __DEV__
         ? HooksDispatcherOnRerenderInDEV
         : HooksDispatcherOnRerender;
-
+      // 重新渲染
       children = Component(props, secondArg);
     } while (didScheduleRenderPhaseUpdateDuringThisPass);
   }

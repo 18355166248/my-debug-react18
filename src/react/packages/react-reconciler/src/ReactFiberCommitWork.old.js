@@ -2117,7 +2117,6 @@ function commitMutationEffectsOnFiber(
       if (flags & Update) {
         try {
            // 在突变阶段调用销毁函数, 保证所有的effect.destroy函数都会在effect.create之前执行
-          debugger
           commitHookEffectListUnmount(
             HookInsertion | HookHasEffect,
             finishedWork,

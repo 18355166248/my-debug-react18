@@ -532,7 +532,7 @@ function forceFrameRate(fps) {
 //  创建任务之后, 最后请求调度requestHostCallback(flushWork)(创建任务源码中的第 5 步), flushWork函数作为参数被传入调度中心内核等待回调. requestHostCallback函数在上文调度内核中已经介绍过了, 在调度中心中, 只需下一个事件循环就会执行回调, 最终执行 flushWork.
 const performWorkUntilDeadline = () => {
   if (scheduledHostCallback !== null) {
-    const currentTime = getCurrentTime();
+    const currentTime = getCurrentTime(); // 获取当时时间
     // Keep track of the start time so we can measure how long the main thread
     // has been blocked.
     startTime = currentTime;
@@ -547,13 +547,16 @@ const performWorkUntilDeadline = () => {
     let hasMoreWork = true;
     try {
       // 这里的 scheduledHostCallback 等于 flushWork
+      // 执行回调, 返回是否有还有剩余任务
       hasMoreWork = scheduledHostCallback(hasTimeRemaining, currentTime);
     } finally {
       if (hasMoreWork) {
         // If there's more work, schedule the next message event at the end
         // of the preceding one.
+         // 有剩余任务, 发起新的调度
         schedulePerformWorkUntilDeadline();
       } else {
+         // 没有剩余任务, 退出
         isMessageLoopRunning = false;
         scheduledHostCallback = null;
       }
@@ -563,6 +566,7 @@ const performWorkUntilDeadline = () => {
   }
   // Yielding to the browser will give it a chance to paint, so we can
   // reset this.
+  // 重置开关 可以继续执行任务
   needsPaint = false;
 };
 
@@ -599,6 +603,7 @@ if (typeof localSetImmediate === 'function') {
   };
 }
 
+ // 请求及时回调: port.postMessage
 function requestHostCallback(callback) {
   scheduledHostCallback = callback;
   if (!isMessageLoopRunning) {

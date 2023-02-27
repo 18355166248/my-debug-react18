@@ -561,6 +561,7 @@ export function scheduleUpdateOnFiber(
     warnAboutRenderPhaseUpdatesInDEV(fiber);
 
     // Track lanes that were updated during the render phase
+    // 更新 workInProgressRootRenderPhaseUpdatedLanes 值
     workInProgressRootRenderPhaseUpdatedLanes = mergeLanes(
       workInProgressRootRenderPhaseUpdatedLanes,
       lane,
@@ -688,9 +689,10 @@ export function isUnsafeClassRenderPhaseUpdate(fiber: Fiber) {
 // root; if a task was already scheduled, we'll check to make sure the priority
 // of the existing task is the same as the priority of the next level that the
 // root has work on. This function is called on every update, and right before
-// 每次更新都会调用此函数
 // exiting a task.
-function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
+// 每次更新都会调用此函数
+function ensureRootIsScheduled (root: FiberRoot, currentTime: number) {
+  // 前半部分: 判断是否需要注册新的调度 这里做了节流防抖操作 避免多次调用 优化性能
   const existingCallbackNode = root.callbackNode;
 
   // Check if any lanes are being starved by other work. If so, mark them as
@@ -752,12 +754,13 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     // Cancel the existing callback. We'll schedule a new one below.
     cancelCallback(existingCallbackNode);
   }
-
+  // 后半部分: 注册调度任务
   // Schedule a new callback.
   let newCallbackNode;
   if (newCallbackPriority === SyncLane) {
     // Special case: Sync React callbacks are scheduled on a special
     // internal queue
+    // 同步情况下 将更新fiber构造方法放进 syncQueue 队列中
     if (root.tag === LegacyRoot) {
       if (__DEV__ && ReactCurrentActQueue.isBatchingLegacy !== null) {
         ReactCurrentActQueue.didScheduleLegacyUpdate = true;
@@ -790,11 +793,13 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
         });
       }
     } else {
+      // 不支持微任务的话 刷新即时任务中的队列。
       // Flush the queue in an Immediate task.
       scheduleCallback(ImmediateSchedulerPriority, flushSyncCallbacks);
     }
     newCallbackNode = null;
   } else {
+    // 异步任务 目前的主线
     let schedulerPriorityLevel;
     switch (lanesToEventPriority(nextLanes)) {
       case DiscreteEventPriority:
@@ -815,6 +820,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
     }
     // 执行 src/react/packages/scheduler/src/forks/Scheduler.js 下的 unstable_scheduleCallback
     // 会执行 performWorkUntilDeadline , performWorkUntilDeadline会执行 下面的 performConcurrentWorkOnRoot 也就是渲染
+    // 这里就是将 performConcurrentWorkOnRoot 异步调用
     newCallbackNode = scheduleCallback(
       schedulerPriorityLevel,
       performConcurrentWorkOnRoot.bind(null, root), // 执行初次渲染
@@ -827,6 +833,7 @@ function ensureRootIsScheduled(root: FiberRoot, currentTime: number) {
 
 // This is the entry point for every concurrent task, i.e. anything that
 // goes through Scheduler.
+// 这是每个并发任务的入口点，即 通过调度器。
 function performConcurrentWorkOnRoot(root, didTimeout) {
   if (enableProfilerTimer && enableProfilerNestedUpdatePhase) {
     resetNestedUpdateFlag();
@@ -834,6 +841,7 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
 
   // Since we know we're in a React event, we can clear the current
   // event time. The next update will compute a new event time.
+  // 因为我们知道我们处于React事件中，所以我们可以清除事件时间。下一次更新将计算新的事件时间。
   currentEventTime = NoTimestamp;
   currentEventTransitionLane = NoLanes;
 
@@ -844,7 +852,9 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
   // Flush any pending passive effects before deciding which lanes to work on,
   // in case they schedule additional work.
   const originalCallbackNode = root.callbackNode;
+  // 执行 render 的 effect 的回调
   const didFlushPassiveEffects = flushPassiveEffects();
+  // 有可能某些effect会取消本次任务
   if (didFlushPassiveEffects) {
     // Something in the passive effect phase may have canceled the current task.
     // Check if the task node for this root was changed.
@@ -879,7 +889,7 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
     !includesBlockingLane(root, lanes) &&
     !includesExpiredLane(root, lanes) &&
     (disableSchedulerTimeoutInWorkLoop || !didTimeout);
-  // 从root节点开始, 至上而下更新
+  // 从root节点开始, 至上而下更新  构造fiber树
   let exitStatus = shouldTimeSlice
     ? renderRootConcurrent(root, lanes)
     : renderRootSync(root, lanes);
@@ -914,7 +924,7 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
       markRootSuspended(root, lanes);
     } else {
       // The render completed.
-
+      // 完成
       // Check if this render may have yielded to a concurrent event, and if so,
       // confirm that any newly rendered stores are consistent.
       // TODO: It's possible that even a concurrent render may never have yielded
@@ -955,15 +965,17 @@ function performConcurrentWorkOnRoot(root, didTimeout) {
       // 注意fiberRoot.finishedWork 和 fiberRoot.current 指针,在 commitRoot 阶段会进行处理
       root.finishedWork = finishedWork;
       root.finishedLanes = lanes;
-      // 开始执行 commit
+      // 开始执行 commit 渲染 fiber 树
       finishConcurrentRender(root, exitStatus, lanes);
     }
   }
-
+  // 递归执行
+  // 退出前再次检测, 是否还有其他更新, 是否需要发起新调度
   ensureRootIsScheduled(root, now());
   if (root.callbackNode === originalCallbackNode) {
     // The task node scheduled for this root is the same one that's
     // currently executed. Need to return a continuation.
+    // 渲染被阻断, 返回一个新的performConcurrentWorkOnRoot函数, 等待下一次调用
     return performConcurrentWorkOnRoot.bind(null, root);
   }
   return null;
@@ -1241,7 +1253,7 @@ function performSyncWorkOnRoot(root) {
     throw new Error('Should not already be working.');
   }
 
-  flushPassiveEffects();
+  flushPassiveEffects(); // 执行 render 后的 effect 回调
 
   let lanes = getNextLanes(root, NoLanes);
   if (!includesSomeLane(lanes, SyncLane)) {
@@ -1277,9 +1289,11 @@ function performSyncWorkOnRoot(root) {
 
   // We now have a consistent tree. Because this is a sync render, we
   // will commit it even if something suspended.
+  // 这个时候我们已经拿到了一个完整的 fiber 树 并将它赋值给 根节点的 finishedWork上
   const finishedWork: Fiber = (root.current.alternate: any);
   root.finishedWork = finishedWork;
   root.finishedLanes = lanes;
+  //
   commitRoot(
     root,
     workInProgressRootRecoverableErrors,
