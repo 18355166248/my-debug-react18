@@ -246,14 +246,15 @@ function workLoop(hasTimeRemaining, initialTime) {
   // Return whether there's additional work
   // 如果task队列没有清空, 返回true. 等待调度中心下一次回调
   if (currentTask !== null) {
-    return true;
+    return true; // 这里也就是赋值给 hasMoreWork 判断是否还有任务 继续执行 postmessage
   } else {
+    // 这里判断延迟任务队列是否为空  如果不为空 延迟执行 判断继续下一次 requestHostCallback
     const firstTimer = peek(timerQueue);
     if (firstTimer !== null) {
       requestHostTimeout(handleTimeout, firstTimer.startTime - currentTime);
     }
     // task队列已经清空, 返回false.
-    return false;
+    return false;  // 这里也就是赋值给 hasMoreWork 判断是否还有任务 继续执行 postmessage
   }
 }
 
@@ -320,7 +321,7 @@ function unstable_wrapCallback(callback) {
 }
 
 function unstable_scheduleCallback(priorityLevel, callback, options) {
-  var currentTime = getCurrentTime();
+  var currentTime = getCurrentTime();  // 1. 获取当前时间
   var startTime;
   if (typeof options === 'object' && options !== null) {
     var delay = options.delay;
@@ -368,9 +369,12 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
 
   if (startTime > currentTime) {
     // This is a delayed task.
+    // 这是一个延迟任务
     newTask.sortIndex = startTime;
-    // 4. 加入任务队列
+    // 4. 加入延迟任务队列
     push(timerQueue, newTask);
+    // 这里判断是不是 taskQueue 为空 且 timerQueue 只有一个上面新建的任务  也就是说判断是否只有一个任务 如果是的话
+    // 取消上一个settimeout 生成新的宏任务延时执行
     if (peek(taskQueue) === null && newTask === peek(timerQueue)) {
       // All tasks are delayed, and this is the task with the earliest delay.
       if (isHostTimeoutScheduled) {
@@ -379,13 +383,14 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
       } else {
         isHostTimeoutScheduled = true;
       }
-      // Schedule a timeout.
+      // Schedule a timeout. 使用一个宏任务 请求延迟回调
+      // 目的就是延迟执行任务 requestHostCallback
       requestHostTimeout(handleTimeout, startTime - currentTime);
     }
   } else {
     // sortIndex: 排序索引, 全等于过期时间. 保证过期时间越小, 越紧急的任务排在最前面
     newTask.sortIndex = expirationTime;
-    // 4. 加入任务队列
+    // 4. 加入实时任务队列
     push(taskQueue, newTask);
     if (enableProfiling) {
       markTaskStart(newTask, currentTime);

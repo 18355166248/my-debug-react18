@@ -704,7 +704,8 @@ function ensureRootIsScheduled (root: FiberRoot, currentTime: number) {
     root,
     root === workInProgressRoot ? workInProgressRootRenderLanes : NoLanes,
   );
-  // 节流防抖
+  debugger
+  // 判断如果没有需要更新的 直接停止新建任务
   if (nextLanes === NoLanes) {
     // Special case: There's nothing to work on.
     // 没有需要工作的
@@ -720,8 +721,9 @@ function ensureRootIsScheduled (root: FiberRoot, currentTime: number) {
   const newCallbackPriority = getHighestPriorityLane(nextLanes);
 
   // Check if there's an existing task. We may be able to reuse it.
-  // 防抖
+  // 节流防抖
   const existingCallbackPriority = root.callbackPriority;
+  // 判断当前的优先级 是不是等于之前任务优先级 如果等于 那就不要新建任务了
   if (
     existingCallbackPriority === newCallbackPriority &&
     // Special case related to `act`. If the currently scheduled task is a
@@ -821,6 +823,7 @@ function ensureRootIsScheduled (root: FiberRoot, currentTime: number) {
     // 执行 src/react/packages/scheduler/src/forks/Scheduler.js 下的 unstable_scheduleCallback
     // 会执行 performWorkUntilDeadline , performWorkUntilDeadline会执行 下面的 performConcurrentWorkOnRoot 也就是渲染
     // 这里就是将 performConcurrentWorkOnRoot 异步调用
+    // 注册一个任务队列 (小顶堆)
     newCallbackNode = scheduleCallback(
       schedulerPriorityLevel,
       performConcurrentWorkOnRoot.bind(null, root), // 执行初次渲染
