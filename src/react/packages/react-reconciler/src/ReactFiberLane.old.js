@@ -509,7 +509,7 @@ export function claimNextRetryLane(): Lane {
   }
   return lane;
 }
-
+// 分离出最高优先级
 export function getHighestPriorityLane(lanes: Lanes): Lane {
   return lanes & -lanes;
 }

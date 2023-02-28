@@ -2031,9 +2031,8 @@ function startTransition(setPending, callback, options) {
   setCurrentUpdatePriority(
     higherEventPriority(previousPriority, ContinuousEventPriority),
   );
-
-  setPending(true);
-
+  // 第一次执行
+  setPending(true); // 这个方法其实就是 dispatchSetState
   const prevTransition = ReactCurrentBatchConfig.transition;
   ReactCurrentBatchConfig.transition = {};
   const currentTransition = ReactCurrentBatchConfig.transition;
@@ -2050,11 +2049,11 @@ function startTransition(setPending, callback, options) {
   }
 
   try {
+    // 第二次执行 这个时候会更新lane的值 也就是64 用于后期进入并发模式
     setPending(false);
     callback();
   } finally {
     setCurrentUpdatePriority(previousPriority);
-
     ReactCurrentBatchConfig.transition = prevTransition;
 
     if (__DEV__) {
@@ -2266,9 +2265,7 @@ function dispatchSetState<S, A>(
       );
     }
   }
-
-  const lane = requestUpdateLane(fiber);
-
+  const lane = requestUpdateLane(fiber); // 固定返回 64
   const update: Update<S, A> = {
     lane,
     action,

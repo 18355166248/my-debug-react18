@@ -353,7 +353,7 @@ function unstable_scheduleCallback(priorityLevel, callback, options) {
       timeout = NORMAL_PRIORITY_TIMEOUT;
       break;
   }
-  var expirationTime = startTime + timeout;
+  var expirationTime = startTime + timeout; // 过期时间
   // 3. 创建新任务
   var newTask = {
     id: taskIdCounter++, // id: 一个自增编号

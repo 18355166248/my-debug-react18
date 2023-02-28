@@ -639,7 +639,7 @@ function cutOffTailIfNeeded(
     }
   }
 }
-
+// 合并lanes 一直回溯到根节点
 function bubbleProperties(completedWork: Fiber) {
   const didBailout =
     completedWork.alternate !== null &&

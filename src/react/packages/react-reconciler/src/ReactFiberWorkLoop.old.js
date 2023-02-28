@@ -487,6 +487,7 @@ export function requestUpdateLane(fiber: Fiber): Lane {
     // over. Our heuristic for that is whenever we enter a concurrent work loop.
     if (currentEventTransitionLane === NoLane) {
       // All transitions within the same event are assigned the same lane.
+      // 估计的值 64
       currentEventTransitionLane = claimNextTransitionLane();
     }
     return currentEventTransitionLane;
@@ -700,11 +701,12 @@ function ensureRootIsScheduled (root: FiberRoot, currentTime: number) {
   markStarvedLanesAsExpired(root, currentTime);
 
   // Determine the next lanes to work on, and their priority.
+  // 调用 getNextLanes 计算出在本次更新中应该处理的这批lanes (nextLanes)，从而确定下一个要工作的lane车道及其优先级。
+  // 任务优先级计算的原理是这样的：存储在root对象上的lanes (expiredLanes、suspendedLanes、pingedLanes等) 经过 getNextLanes 处理后，挑出那些当前需要紧急处理的 lanes，然后将这些lanes传入 getHighestPriorityLane 中，找出这些lanes的优先级，作为任务优先级。
   const nextLanes = getNextLanes(
     root,
     root === workInProgressRoot ? workInProgressRootRenderLanes : NoLanes,
   );
-  debugger
   // 判断如果没有需要更新的 直接停止新建任务
   if (nextLanes === NoLanes) {
     // Special case: There's nothing to work on.
@@ -718,10 +720,12 @@ function ensureRootIsScheduled (root: FiberRoot, currentTime: number) {
   }
 
   // We use the highest priority lane to represent the priority of the callback.
+  // 分离出最高优先级
   const newCallbackPriority = getHighestPriorityLane(nextLanes);
 
   // Check if there's an existing task. We may be able to reuse it.
   // 节流防抖
+  // 上一个 newCallbackPriority
   const existingCallbackPriority = root.callbackPriority;
   // 判断当前的优先级 是不是等于之前任务优先级 如果等于 那就不要新建任务了
   if (
@@ -802,20 +806,26 @@ function ensureRootIsScheduled (root: FiberRoot, currentTime: number) {
     newCallbackNode = null;
   } else {
     // 异步任务 目前的主线
-    let schedulerPriorityLevel;
+    let schedulerPriorityLevel; // 调度优先级等级
+    // 任务优先级转换为事件优先级
     switch (lanesToEventPriority(nextLanes)) {
+       // DiscreteEventPriority  离散事件优先级最高，赋予 立即执行任务的优先级(最高)
       case DiscreteEventPriority:
         schedulerPriorityLevel = ImmediateSchedulerPriority;
         break;
+      // ContinuousEventPriority：阻塞事件优先级为中优先级，赋予用户阻塞任务的优先级
       case ContinuousEventPriority:
         schedulerPriorityLevel = UserBlockingSchedulerPriority;
         break;
+      // DefaultEventPriority 优先级，赋予正常的调度优先级
       case DefaultEventPriority:
         schedulerPriorityLevel = NormalSchedulerPriority;
         break;
+      // IdleEventPriority  优先级，赋予最低的调度优先级
       case IdleEventPriority:
         schedulerPriorityLevel = IdleSchedulerPriority;
         break;
+      // 默认情况下是正常的调度优先级
       default:
         schedulerPriorityLevel = NormalSchedulerPriority;
         break;
@@ -1830,6 +1840,7 @@ function renderRootConcurrent(root: FiberRoot, lanes: Lanes) {
   // Check if the tree has completed.
   if (workInProgress !== null) {
     // Still work remaining.
+    // 表示还没渲染完毕 需要继续
     if (enableSchedulingProfiler) {
       markRenderYielded();
     }
@@ -2100,6 +2111,7 @@ function commitRootImpl(
 
   // Update the first and last pending times on this root. The new first
   // pending time is whatever is left on the root fiber.
+  // 更新 pendingLanes 值
   let remainingLanes = mergeLanes(finishedWork.lanes, finishedWork.childLanes);
   markRootFinished(root, remainingLanes);
 

@@ -1,22 +1,36 @@
-// import React, { useEffect, useLayoutEffect, useState } from "react";
+import React, {
+  useEffect,
+  useLayoutEffect,
+  useState,
+  useTransition,
+} from "react";
 
-// function App() {
-//   const [count, setCount] = useState(0);
-//   const [bool, setBool] = useState(false);
+function App() {
+  const [count, setCount] = useState(0);
+  const [bool, setBool] = useState(false);
 
-//   useEffect(() => {
-//     console.log(22);
-//   }, []);
+  const [isPending, startTransition] = useTransition();
 
-//   return (
-//     <div>
-//       <button onClick={() => setCount((i) => i + 1)}>点击Count+1</button>
-//       <button onClick={() => setBool(!bool)}>点击Count+1</button>
-//       <div>{count}</div>
-//       <div>{String(bool)}</div>
-//     </div>
-//   );
-// }
+  function handleClick() {
+    startTransition(() => {
+      setBool(!bool);
+    });
+
+    setCount(count + 1);
+  }
+
+  return (
+    <div>
+      <button onClick={handleClick}>点击Count+1</button>
+      <button onClick={() => setBool(!bool)}>点击Count+1</button>
+      <div>{count}</div>
+      <div>{String(bool)}</div>
+    </div>
+  );
+}
+
+export default App;
+
 // function App() {
 //   const [count, setCount] = useState(0);
 
@@ -92,32 +106,32 @@
 
 // export default App;
 
-import React, { Component } from "react";
+// import React, { Component } from "react";
 
-export default class App extends Component {
-  constructor(props) {
-    super(props);
+// export default class App extends Component {
+//   constructor(props) {
+//     super(props);
 
-    this.state = {
-      count: 0,
-    };
-  }
+//     this.state = {
+//       count: 0,
+//     };
+//   }
 
-  add = () => {
-    this.setState((state) => ({ count: state.count + 1 }));
-    this.setState((state) => ({ count: state.count + 1 }));
-    this.setState((state) => ({ count: state.count + 1 }));
-  };
+//   add = () => {
+//     this.setState((state) => ({ count: state.count + 1 }));
+//     this.setState((state) => ({ count: state.count + 1 }));
+//     this.setState((state) => ({ count: state.count + 1 }));
+//   };
 
-  render() {
-    const { count } = this.state;
-    return (
-      <div style={{ padding: 20 }}>
-        <div style={{ fontSize: 30, color: "red" }} onClick={this.add}>
-          +
-        </div>
-        <div style={{ fontSize: 30, color: "green" }}>{count}</div>
-      </div>
-    );
-  }
-}
+//   render() {
+//     const { count } = this.state;
+//     return (
+//       <div style={{ padding: 20 }}>
+//         <div style={{ fontSize: 30, color: "red" }} onClick={this.add}>
+//           +
+//         </div>
+//         <div style={{ fontSize: 30, color: "green" }}>{count}</div>
+//       </div>
+//     );
+//   }
+// }
