@@ -1399,7 +1399,6 @@ declare function flushSync<R>(fn: () => R): R;
 declare function flushSync(): void;
 // eslint-disable-next-line no-redeclare
 export function flushSync (fn) {
-  debugger
   // In legacy mode, we flush pending passive effects at the beginning of the
   // next event, not at the end of the previous one.
   if (
@@ -1409,7 +1408,7 @@ export function flushSync (fn) {
   ) {
     flushPassiveEffects();
   }
-
+debugger
   const prevExecutionContext = executionContext;
   executionContext |= BatchedContext;
 

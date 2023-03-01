@@ -119,11 +119,24 @@ export default class App extends Component {
   }
 
   add = () => {
+    // setState 同步
     flushSync(() => {
-      console.log(111)
+      console.log(111);
       this.setState((state) => ({ count: state.count + 1 }));
     });
     console.log(this.state.count);
+    flushSync(() => {
+      console.log(222);
+      this.setState((state) => ({ count: state.count + 1 }));
+    });
+    console.log(this.state.count);
+
+    // 异步
+    // Promise.resolve().then(() => {
+    //   this.setState((state) => ({ count: state.count + 1 }));
+    //   console.log(this.state.count);
+    // });
+
     // this.setState((state) => ({ count: state.count + 1 }));
     // this.setState((state) => ({ count: state.count + 1 }));
     // this.setState((state) => ({ count: state.count + 1 }));
