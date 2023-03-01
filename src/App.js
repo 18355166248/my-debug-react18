@@ -1,35 +1,35 @@
-import React, {
-  useEffect,
-  useLayoutEffect,
-  useState,
-  useTransition,
-} from "react";
+// import React, {
+//   useEffect,
+//   useLayoutEffect,
+//   useState,
+//   useTransition,
+// } from "react";
 
-function App() {
-  const [count, setCount] = useState(0);
-  const [bool, setBool] = useState(false);
+// function App() {
+//   const [count, setCount] = useState(0);
+//   const [bool, setBool] = useState(false);
 
-  const [isPending, startTransition] = useTransition();
+//   const [isPending, startTransition] = useTransition();
 
-  function handleClick() {
-    startTransition(() => {
-      setBool(!bool);
-    });
+//   function handleClick() {
+//     startTransition(() => {
+//       setBool(!bool);
+//     });
 
-    setCount(count + 1);
-  }
+//     setCount(count + 1);
+//   }
 
-  return (
-    <div>
-      <button onClick={handleClick}>点击Count+1</button>
-      <button onClick={() => setBool(!bool)}>点击Count+1</button>
-      <div>{count}</div>
-      <div>{String(bool)}</div>
-    </div>
-  );
-}
+//   return (
+//     <div>
+//       <button onClick={handleClick}>点击Count+1</button>
+//       <button onClick={() => setBool(!bool)}>点击Count+1</button>
+//       <div>{count}</div>
+//       <div>{String(bool)}</div>
+//     </div>
+//   );
+// }
 
-export default App;
+// export default App;
 
 // function App() {
 //   const [count, setCount] = useState(0);
@@ -106,32 +106,38 @@ export default App;
 
 // export default App;
 
-// import React, { Component } from "react";
+import React, { Component } from "react";
+import { flushSync } from "react-dom";
 
-// export default class App extends Component {
-//   constructor(props) {
-//     super(props);
+export default class App extends Component {
+  constructor(props) {
+    super(props);
 
-//     this.state = {
-//       count: 0,
-//     };
-//   }
+    this.state = {
+      count: 0,
+    };
+  }
 
-//   add = () => {
-//     this.setState((state) => ({ count: state.count + 1 }));
-//     this.setState((state) => ({ count: state.count + 1 }));
-//     this.setState((state) => ({ count: state.count + 1 }));
-//   };
+  add = () => {
+    flushSync(() => {
+      console.log(111)
+      this.setState((state) => ({ count: state.count + 1 }));
+    });
+    console.log(this.state.count);
+    // this.setState((state) => ({ count: state.count + 1 }));
+    // this.setState((state) => ({ count: state.count + 1 }));
+    // this.setState((state) => ({ count: state.count + 1 }));
+  };
 
-//   render() {
-//     const { count } = this.state;
-//     return (
-//       <div style={{ padding: 20 }}>
-//         <div style={{ fontSize: 30, color: "red" }} onClick={this.add}>
-//           +
-//         </div>
-//         <div style={{ fontSize: 30, color: "green" }}>{count}</div>
-//       </div>
-//     );
-//   }
-// }
+  render() {
+    const { count } = this.state;
+    return (
+      <div style={{ padding: 20 }}>
+        <div style={{ fontSize: 30, color: "red" }} onClick={this.add}>
+          +
+        </div>
+        <div style={{ fontSize: 30, color: "green" }}>{count}</div>
+      </div>
+    );
+  }
+}

@@ -201,8 +201,8 @@ function applyDerivedStateFromProps(
 
 const classComponentUpdater = {
   isMounted,
-  enqueueSetState(inst, payload, callback) {
-    const fiber = getInstance(inst);
+  enqueueSetState (inst, payload, callback) {
+    const fiber = getInstance(inst); // key._reactInternals;
     const eventTime = requestEventTime();
     const lane = requestUpdateLane(fiber);
 

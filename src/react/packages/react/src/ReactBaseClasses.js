@@ -64,7 +64,7 @@ Component.prototype.setState = function(partialState, callback) {
         'function which returns an object of state variables.',
     );
   }
-
+  // 这里的 updater初始化的位置其实是在 src/react/packages/react-reconciler/src/ReactFiberClassComponent.new.js classComponentUpdater
   this.updater.enqueueSetState(this, partialState, callback, 'setState');
 };
 
