@@ -83,74 +83,77 @@
 //   );
 // }
 
-// export default App;
+export default App;
 
-// import React, { useState } from "react";
+import React, { useState } from "react";
 
-// function App() {
-//   const [count, setCount] = useState(["A", "B", "C", "D", "E"]);
+function App() {
+  const [count, setCount] = useState(["A", "B", "C", "D", "E"]);
 
-//   return (
-//     <div>
-//       <button onClick={() => setCount(["A", "B", "E", "C", "X", "Y"])}>
-//         点击Count+1
-//       </button>
-//       <div>
-//         {count.map((item) => (
-//           <p key={item}>{item}</p>
-//         ))}
-//       </div>
-//     </div>
-//   );
-// }
-
-// export default App;
-
-import React, { Component } from "react";
-import { flushSync } from "react-dom";
-
-export default class App extends Component {
-  constructor(props) {
-    super(props);
-
-    this.state = {
-      count: 0,
-    };
-  }
-
-  add = () => {
-    // setState 同步
-    flushSync(() => {
-      console.log(111);
-      this.setState((state) => ({ count: state.count + 1 }));
-    });
-    console.log(this.state.count);
-    flushSync(() => {
-      console.log(222);
-      this.setState((state) => ({ count: state.count + 1 }));
-    });
-    console.log(this.state.count);
-
-    // 异步
-    // Promise.resolve().then(() => {
-    //   this.setState((state) => ({ count: state.count + 1 }));
-    //   console.log(this.state.count);
-    // });
-
-    // this.setState((state) => ({ count: state.count + 1 }));
-    // this.setState((state) => ({ count: state.count + 1 }));
-    // this.setState((state) => ({ count: state.count + 1 }));
-  };
-
-  render() {
-    const { count } = this.state;
-    return (
-      <div style={{ padding: 20 }}>
-        <div style={{ fontSize: 30, color: "red" }} onClick={this.add}>
-          +
-        </div>
-        <div style={{ fontSize: 30, color: "green" }}>{count}</div>
+  return (
+    <div>
+      <button onClick={() => setCount(["A", "B", "E", "C", "X", "Y"])}>
+        点击Count+1
+      </button>
+      <div>
+        {count.map((item) => (
+          <p key={item}>{item}</p>
+        ))}
       </div>
-    );
-  }
+    </div>
+  );
 }
+
+// export default App;
+
+// import React, { Component } from "react";
+// import { flushSync } from "react-dom";
+
+// export default class App extends Component {
+//   constructor(props) {
+//     super(props);
+
+//     this.state = {
+//       count: 0,
+//     };
+//   }
+
+//   add = () => {
+//     // setState 同步
+//     // flushSync(() => {
+//     //   console.log(111);
+//     //   this.setState((state) => ({ count: state.count + 1 }));
+//     // });
+//     // console.log(this.state.count);
+//     // flushSync(() => {
+//     //   console.log(222);
+//     //   this.setState((state) => ({ count: state.count + 1 }));
+//     // });
+//     // console.log(this.state.count);
+
+//     // 异步
+//     // Promise.resolve().then(() => {
+//     //   this.setState((state) => ({ count: state.count + 1 }));
+//     //   console.log(this.state.count);
+//     // });
+
+//     this.setState((state) => ({ count: state.count + 1 }));
+//     this.setState((state) => ({ count: state.count + 1 }));
+//     this.setState((state) => {
+//       debugger;
+//       return { count: state.count + 1 };
+//     });
+//   };
+
+//   render() {
+//     const { count } = this.state;
+//     return (
+//       <div style={{ padding: 20 }}>
+//         <div style={{ fontSize: 30, color: "red" }} onClick={this.add}>
+//           +
+//         </div>
+//         <div style={{ fontSize: 30, color: "green" }}>{count}</div>
+//       </div>
+//     );
+//   }
+// }

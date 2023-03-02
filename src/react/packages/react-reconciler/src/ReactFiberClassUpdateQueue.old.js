@@ -570,6 +570,7 @@ export function processUpdateQueue<State>(
         }
 
         // Process this update.
+        // 连续执行多次setState的回调 批量更新
         newState = getStateFromUpdate(
           workInProgress,
           queue,
