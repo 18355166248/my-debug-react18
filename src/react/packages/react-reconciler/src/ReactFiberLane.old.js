@@ -488,7 +488,7 @@ export function includesExpiredLane(root: FiberRoot, lanes: Lanes) {
 export function isTransitionLane(lane: Lane) {
   return (lane & TransitionLanes) !== NoLanes;
 }
-
+// 分配优先级时，会从过渡优先级的最右边开始分配，后续产生的任务则会依次向左移动一位，直到最后一个位置被分配后，后面的任务会从最右边第一个位置再开始做分配
 export function claimNextTransitionLane(): Lane {
   // Cycle through the lanes, assigning each new transition to the next lane.
   // In most cases, this means every transition gets its own lane, until we

@@ -329,6 +329,7 @@ export function updateContainer(
   }
   const current = container.current;
   const eventTime = requestEventTime(); // 执行的是浏览器 performance.now 方法, 返回一个表示从性能测量时刻开始经过的毫秒数 自创建上下文以来经过的时间
+  // 获取update优先级
   const lane = requestUpdateLane(current); // 这里最后拿到的是 src/react/packages/react-reconciler/src/ReactFiberLane.old.js 下的 DefaultLane 也就是 16
 
   if (enableSchedulingProfiler) {

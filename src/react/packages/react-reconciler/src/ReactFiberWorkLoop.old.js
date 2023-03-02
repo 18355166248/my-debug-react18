@@ -445,11 +445,16 @@ export function requestEventTime () {
 export function getCurrentTime() {
   return now();
 }
-
+// 获取update优先级
 export function requestUpdateLane(fiber: Fiber): Lane {
   // Special cases
+  // fiber 节点上的 mode 属性值来源于 HostFiberRoot 对象的mode
+  // 标记了属于哪种启动模式(legacy模式、Concurrent模式)
   const mode = fiber.mode;
+  // 启动不是 Concurrent 模式，表示是使用同步优先级做渲染
   if ((mode & ConcurrentMode) === NoMode) {
+    // 启动模式为 legacy 模式
+    // 返回同步优先级
     return (SyncLane: Lane);
   } else if (
     !deferRenderPhaseUpdateToNextBatch &&
@@ -465,9 +470,12 @@ export function requestUpdateLane(fiber: Fiber): Lane {
     // This behavior is only a fallback. The flag only exists until we can roll
     // out the setState warning, since existing code might accidentally rely on
     // the current behavior.
+    // 启动模式是 Concurrent 模式，返回这个正在执行任务的 lane
+    // 当前新的任务会和现有的任务进行一次批量更新
+    // pickArbitraryLane 函数返回的lane优先级是高优先级
     return pickArbitraryLane(workInProgressRootRenderLanes);
   }
-
+  // 过渡优先级 分配
   const isTransition = requestCurrentTransition() !== NoTransition;
   if (isTransition) {
     if (__DEV__ && ReactCurrentBatchConfig.transition !== null) {
@@ -475,7 +483,7 @@ export function requestUpdateLane(fiber: Fiber): Lane {
       if (!transition._updatedFibers) {
         transition._updatedFibers = new Set();
       }
-
+      // 根据过渡优先级往set集合_updatedFibers里添加fiber节点
       transition._updatedFibers.add(fiber);
     }
     // The algorithm for assigning an update to a lane should be stable for all
@@ -488,6 +496,7 @@ export function requestUpdateLane(fiber: Fiber): Lane {
     if (currentEventTransitionLane === NoLane) {
       // All transitions within the same event are assigned the same lane.
       // 估计的值 64
+      // 通过过渡优先级分配规则分配过渡优先级
       currentEventTransitionLane = claimNextTransitionLane();
     }
     return currentEventTransitionLane;
@@ -499,6 +508,7 @@ export function requestUpdateLane(fiber: Fiber): Lane {
   // The opaque type returned by the host config is internally a lane, so we can
   // use that directly.
   // TODO: Move this type conversion to the event priority module.
+  // 更新优先级
   const updateLane: Lane = (getCurrentUpdatePriority(): any);
   if (updateLane !== NoLane) {
     return updateLane;
@@ -549,6 +559,7 @@ export function scheduleUpdateOnFiber(
   }
 
   // Mark that the root has a pending update.
+  // 更新 root.pendingLanes
   markRootUpdated(root, lane, eventTime);
   if (
     (executionContext & RenderContext) !== NoLanes &&
